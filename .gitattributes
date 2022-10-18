@@ -1,0 +1,4 @@
+# Windows
+* text=auto
+*.zig text=auto eol=lf
+
