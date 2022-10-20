@@ -7,8 +7,8 @@ default: check
 
 .PHONY: zig-build
 zig-build:
-	zig build -Dtrace -p build
-	zig build -Dshowdown -Dtrace -p build
+	zig build -Dbar -p build
+	zig build -Dfoo -Dbar -p build
 
 .PHONY: js-build
 js-build: node_modules
@@ -55,8 +55,8 @@ fix: zig-fix js-fix
 
 .PHONY: zig-test
 zig-test:
-	zig build -Dtrace test
-	zig build -Dshowdown -Dtrace test
+	zig build -Dbar test
+	zig build -Dfoo -Dbar test
 
 .PHONY: js-test
 js-test: js-build
@@ -69,9 +69,9 @@ test: zig-test js-test
 zig-coverage:
 	rm -rf coverage/zig
 	mkdir -p coverage/zig
-	zig build test -Dtest-coverage=coverage/zig/pkmn
-	zig build -Dshowdown -Dtrace test -Dtest-coverage=coverage/zig/pkmn-showdown
-	kcov --merge coverage/zig/merged coverage/zig/pkmn coverage/zig/pkmn-showdown
+	zig build test -Dtest-coverage=coverage/zig/zigpkg
+	zig build -Dfoo -Dbar test -Dtest-coverage=coverage/zig/zigpkg-foo
+	kcov --merge coverage/zig/merged coverage/zig/zigpkg coverage/zig/zigpkg-foo
 
 .PHONY: js-coverage
 js-coverage: js-build

@@ -1,9 +1,6 @@
 {
   "dependencies": {
-    "@pkmn/data": "^0.5.13",
-    "@pkmn/dex": "^0.5.13",
-    "@pkmn/engine": "file:../../..",
-    "@pkmn/sets": "^3.0.0"
+    "zigpkg": "file:../../.."
   },
   "devDependencies": {
     "parcel": "^2.4.1"

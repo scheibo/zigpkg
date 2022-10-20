@@ -50,7 +50,7 @@ const unpack7 = (input, output) => new Promise((resolve, reject) => {
 
   // Node won't let us used the package we just installed above before v16 because pain
   if (+/^v(\d+)/.exec(process.version)[1] < 16) {
-    console.error('The pkmn engine requires Node v16+');
+    console.error('zigpkg requires Node v16+');
     process.exit(1);
   }
 
@@ -187,10 +187,7 @@ const headers = async () => {
 (async () => {
   const zig = await install();
   const include = await headers();
-
-  // FIXME: need to detect original flags by trying to require pkmn.node/pkmn-showdown.node library
-  // and checking constants to know whether to build with -Dshowdown/-Dtrace + build and embed WASM
-  console.log('Building build/lib/pkmn.node');
+  console.log('Building build/lib/zigpkg.node');
   sh(zig, ['build', '-Dshowdown', '-Drelease-fast', `-Dnode-headers=${include}`, '-Dstrip']);
 })().catch(e => {
   console.error(e);

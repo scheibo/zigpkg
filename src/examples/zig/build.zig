@@ -1,32 +1,23 @@
 const std = @import("std");
-const pkmn = @import("lib/pkmn/build.zig");
+const zigpkg = @import("lib/zigpkg/build.zig");
 
 pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{});
     const mode = b.standardReleaseOptions();
 
-    const showdown = b.option(
-        bool,
-        "showdown",
-        "Enable Pokémon Showdown compatability mode",
-    ) orelse false;
-    const trace = b.option(
-        bool,
-        "trace",
-        "Enable trace logs",
-    ) orelse false;
+    const foo = b.option(bool, "foo", "Enable foo") orelse false;
+    const trace = b.option(bool, "bar", "Enable bar") orelse false;
 
     const options = b.addOptions();
-    options.addOption(bool, "showdown", showdown);
-    options.addOption(bool, "trace", trace);
+    options.addOption(bool, "foo", foo);
+    options.addOption(bool, "bar", bar);
 
     const build_options = options.getPackage("build_options");
 
     const exe = b.addExecutable("zig", "example.zig");
-    if (@hasField(std.build.LibExeObjStep, "use_stage1")) exe.use_stage1 = true;
     exe.setTarget(target);
     exe.setBuildMode(mode);
-    exe.addPackage(pkmn.pkg(b, build_options));
+    exe.addPackage(zigpkg.pkg(b, build_options));
     exe.install();
 
     const run_cmd = exe.run();
