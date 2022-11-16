@@ -4,7 +4,7 @@
   "main": "build/pkg/index.js",
   "types": "build/pkg/index.d.ts",
   "description": "",
-  "repository": "github:scheibo/zig-pkg",
+  "repository": "github:scheibo/zigpkg",
   "license": "MIT",
   "engines": {
     "node": ">=16.0.0"
@@ -33,7 +33,7 @@
     "compile": "tsc -p .",
     "build": "npm run compile",
     "test": "jest",
-    "TODOpostinstall": "node src/bin/install-zigpkg"
+    "postinstall": "node src/bin/install-zigpkg"
   },
   "jest": {
     "collectCoverageFrom": [ "src/pkg/*.ts"],
