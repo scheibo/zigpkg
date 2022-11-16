@@ -24,15 +24,12 @@ pub fn build(b: *Builder) !void {
     const version = tree.root.Object.get("version").?.String;
 
     const foo = b.option(bool, "foo", "Enable foo") orelse false;
-    const trace = b.option(bool, "bar", "Enable bar") orelse false;
+    const bar = b.option(bool, "bar", "Enable bar") orelse false;
     const strip = b.option(bool, "strip", "Strip debugging symbols from binary") orelse false;
 
     const options = b.addOptions();
     options.addOption(bool, "foo", foo);
     options.addOption(bool, "bar", bar);
-
-    const build_options = options.getPackage("build_options");
-    const zigpkg = pkg(b, build_options);
 
     const lib = if (foo) "zigpkg-foo" else "zigpkg";
 
@@ -95,7 +92,7 @@ pub fn build(b: *Builder) !void {
         );
         const pkgconfig_file = try std.fs.cwd().createFile(file, .{});
 
-        const suffix = if (showdown) "-foo" else "";
+        const suffix = if (foo) "-foo" else "";
         const writer = pkgconfig_file.writer();
         try writer.print(
             \\prefix={0s}
@@ -137,7 +134,6 @@ pub fn build(b: *Builder) !void {
     if (coverage) |path| {
         tests.setExecCmd(&.{ "kcov", "--include-pattern=src/lib", path, null });
     }
-    const test_step = if (test_filter != null) null else &tests.step;
 
     const format = b.addFmt(&.{"."});
 

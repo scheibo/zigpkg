@@ -33,7 +33,7 @@
     "compile": "tsc -p .",
     "build": "npm run compile",
     "test": "jest",
-    "postinstall": "node src/bin/install-zigpkg"
+    "TODOpostinstall": "node src/bin/install-zigpkg"
   },
   "jest": {
     "collectCoverageFrom": [ "src/pkg/*.ts"],

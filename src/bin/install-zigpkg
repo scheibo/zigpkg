@@ -188,7 +188,7 @@ const headers = async () => {
   const zig = await install();
   const include = await headers();
   console.log('Building build/lib/zigpkg.node');
-  sh(zig, ['build', '-Dshowdown', '-Drelease-fast', `-Dnode-headers=${include}`, '-Dstrip']);
+  sh(zig, ['build', '-Dfoo', '-Drelease-fast', `-Dnode-headers=${include}`, '-Dstrip']);
 })().catch(e => {
   console.error(e);
   process.exit(1);
