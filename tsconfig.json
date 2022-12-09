@@ -14,6 +14,7 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "outDir": "build",
+    "rootDir": "src",
     "resolveJsonModule": true,
     "sourceMap": true,
     "strict": true,

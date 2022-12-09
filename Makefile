@@ -86,18 +86,18 @@ check: test lint
 .PHONY: c-example
 c-example:
 	$(MAKE) -C src/examples/c
-	./src/examples/c/example
+	./src/examples/c/example 40
 
 src/examples/js/node_modules:
 	npm -C src/examples/js install
 
 .PHONY: js-example
 js-example: src/examples/js/node_modules
-	npm -C src/examples/js start
+	npm -C src/examples/js start -- 40
 
 .PHONY: zig-example
 zig-example:
-	zig build --build-file src/examples/zig/build.zig run -- 1234
+	cd src/examples/zig; zig build run -- 40
 
 .PHONY: example
 example: c-example js-example zig-example

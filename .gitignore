@@ -22,3 +22,5 @@ dist/
 .tsbuildinfo
 .parcel-cache/
 
+# Project
+src/examples/c/example

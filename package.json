@@ -33,7 +33,7 @@
     "compile": "tsc -p .",
     "build": "npm run compile",
     "test": "jest",
-    "TODOpostinstall": "node src/bin/install-zigpkg"
+    "postinstall": "node src/bin/install-zigpkg"
   },
   "jest": {
     "collectCoverageFrom": [ "src/pkg/*.ts"],
@@ -50,6 +50,7 @@
     ]
   },
   "eslintConfig": {
-    "extends": "@pkmn"
+    "extends": "@pkmn",
+    "ignorePatterns": ["dist/", "node_modules/", "src/examples/zig"]
   }
 }

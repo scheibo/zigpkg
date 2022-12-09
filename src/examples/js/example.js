@@ -1,5 +1,3 @@
 const zigpkg = require('zigpkg');
 
-// TODO
-
-console.log(42);
+console.log(zigpkg.add(+process.argv[2]));

@@ -101,7 +101,7 @@ pub fn build(b: *Builder) !void {
             \\
             \\Name: lib{1s}
             \\URL: https://github.com/zigpkg/engine
-            \\Description: Library demonstrate zigpkg{2s}.
+            \\Description: zigpkg{2s} library.
             \\Version: {3s}
             \\Cflags: -I${{includedir}}
             \\Libs: -L${{libdir}} -l{1s}

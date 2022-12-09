@@ -6,7 +6,7 @@ pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
 
     const foo = b.option(bool, "foo", "Enable foo") orelse false;
-    const trace = b.option(bool, "bar", "Enable bar") orelse false;
+    const bar = b.option(bool, "bar", "Enable bar") orelse false;
 
     const options = b.addOptions();
     options.addOption(bool, "foo", foo);
@@ -22,9 +22,7 @@ pub fn build(b: *std.build.Builder) void {
 
     const run_cmd = exe.run();
     run_cmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
+    if (b.args) |args| run_cmd.addArgs(args);
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);

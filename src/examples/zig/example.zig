@@ -17,14 +17,12 @@ pub fn main() !void {
         std.process.exit(1);
     }
 
-    const num = std.fmt.parseUnsigned(u64, args[1], 10) catch {
+    const num = std.fmt.parseUnsigned(u8, args[1], 10) catch {
         try err.print("Invalid number: {s}\n", .{args[1]});
         try err.print("Usage: {s} <num>\n", .{args[0]});
         std.process.exit(1);
     };
 
-    // TODO
-
     const out = std.io.getStdOut().writer();
-    try out.print("{d}\n", .{num});
+    try out.print("{d}\n", .{zigpkg.add(num)});
 }
