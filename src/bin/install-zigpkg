@@ -123,28 +123,12 @@ const install = async () => {
   // Has a previous version of this script installed a compatible version locally?
   if (find(zig)) return zig;
 
-  try {
-    const {zig_exe, version} = JSON.parse(sh('zig', ['env']));
-    const [major, minor, patch] = version.split('.').map(n => parseInt(n));
-    if (major > ZIG_VERSION.major ||
-      (major >= ZIG_VERSION.major && minor > ZIG_VERSION.minor) ||
-      (major >= ZIG_VERSION.major && minor >= ZIG_VERSION.minor && patch >= ZIG_VERSION.patch)) {
-      console.log('Found existing compatible Zig executable:', zig_exe);
-      return zig_exe;
-    } else {
-      console.log(`Existing Zig executable is not compatible (${version} < ${VERSION}):`, zig_exe);
-    }
-  } catch (err) {
-    if (err.code !== 'ENOENT') throw err;
-  }
-
   const arch = process.arch === 'x64'
     ? 'x86_64' : process.arch === 'arm64'
       ? 'aarch64' : process.arch;
   const platform = process.platform === 'darwin'
     ? 'macos' : process.platform === 'win32'
       ? 'windows' : process.platform;
-
 
   try {
     fs.mkdirSync(dir, {recursive: true});
