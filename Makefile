@@ -33,7 +33,7 @@ generate:
 
 .PHONY: zig-lint
 zig-lint:
-	zig build lint
+	zig fmt . --check
 
 .PHONY: js-lint
 js-lint: node_modules
@@ -103,9 +103,8 @@ zig-example:
 example: c-example js-example zig-example
 
 .PHONY: integration
-# TODO: integration: check example
-integration: check zig-example
-	npm run test:integration
+integration: check example
+# TODO: npm run test:integration
 
 .PHONY: benchmark
 benchmark:

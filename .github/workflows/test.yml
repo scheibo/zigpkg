@@ -35,5 +35,5 @@ jobs:
       - run: zig build test ${{matrix.options}} -Drelease-fast
       - run: npm run compile
       - run: npm test
-      - run: npm run lint
+      - run: make lint
       - run: make example
