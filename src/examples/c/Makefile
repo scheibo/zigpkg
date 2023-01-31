@@ -4,7 +4,7 @@ ifneq ($(OS),Windows_NT)
 		RPATH := -Wl,-rpath
 		UNAME := $(shell uname -s)
 		ifeq ($(UNAME),Linux)
-				RPATH := "$(RPATH),$$ORIGIN/$(ROOT)/lib"
+				RPATH := "$(RPATH),\$$ORIGIN/$(ROOT)/lib"
 		endif
 		ifeq ($(UNAME),Darwin)
 				RPATH := "$(RPATH),@executable_path/$(ROOT)/lib"
