@@ -37,5 +37,5 @@ jobs:
       - run: npm run compile
       - run: npm test
       - run: make lint
-      - run: make example options=${{matrix.options}}
-      - run: make example options=${{matrix.options}} static=true
+      - run: make example options="${{matrix.options}}"
+      - run: make example options="${{matrix.options}}" static=true
