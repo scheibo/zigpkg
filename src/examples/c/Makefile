@@ -12,12 +12,13 @@ ifneq ($(OS),Windows_NT)
 endif
 
 CC ?= gcc
-CFLAGS=-Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
+CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
 
+suffix ?= $(if $(findstring foo,$(options)),-foo,)
 ifeq ($(static),true)
-	LDFLAGS := $(ROOT)/lib/libzigpkg$(suffix).a
+	LDFLAGS = $(ROOT)/lib/libzigpkg$(suffix).a
 else
-	LDFLAGS := $(RPATH) -L$(ROOT)/lib -lzigpkg$(suffix)
+	LDFLAGS = $(RPATH) -L$(ROOT)/lib -lzigpkg$(suffix)
 endif
 
 %.o: %.c
@@ -31,4 +32,3 @@ clean:
 	rm -f *.o example
 
 .DEFAULT: example
-
