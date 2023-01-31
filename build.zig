@@ -105,8 +105,8 @@ pub fn build(b: *Builder) !void {
             \\libdir=${{prefix}}/lib
             \\
             \\Name: lib{1s}
-            \\URL: https://github.com/zigpkg/engine
-            \\Description: zigpkg{2s} library.
+            \\URL: https://github.com/scheibo/zigpkg
+            \\Description: zigpkg{2s} library
             \\Version: {3s}
             \\Cflags: -I${{includedir}}
             \\Libs: -L${{libdir}} -l{1s}
