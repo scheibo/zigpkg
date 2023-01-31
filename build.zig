@@ -97,20 +97,21 @@ pub fn build(b: *Builder) !void {
         );
         const pkgconfig_file = try std.fs.cwd().createFile(file, .{});
 
+        const dirname = comptime std.fs.path.dirname(@src().file) orelse ".";
         const suffix = if (foo) "-foo" else "";
         const writer = pkgconfig_file.writer();
         try writer.print(
-            \\prefix={0s}
+            \\prefix={0s}/{1s}
             \\includedir=${{prefix}}/include
             \\libdir=${{prefix}}/lib
             \\
-            \\Name: lib{1s}
+            \\Name: lib{2s}
             \\URL: https://github.com/scheibo/zigpkg
-            \\Description: zigpkg{2s} library
-            \\Version: {3s}
+            \\Description: zigpkg{3s} library
+            \\Version: {4s}
             \\Cflags: -I${{includedir}}
-            \\Libs: -L${{libdir}} -l{1s}
-        , .{ b.install_prefix, lib, suffix, version });
+            \\Libs: -L${{libdir}} -l{2s}
+        , .{ dirname, b.install_path, lib, suffix, version });
         defer pkgconfig_file.close();
 
         b.installFile(file, b.fmt("share/pkgconfig/{s}", .{pc}));
