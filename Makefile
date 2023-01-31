@@ -33,7 +33,7 @@ generate:
 
 .PHONY: zig-lint
 zig-lint:
-	zig fmt . --check --exclude build
+	zig fmt . --check
 
 .PHONY: js-lint
 js-lint: node_modules
