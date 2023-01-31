@@ -11,6 +11,7 @@ ifneq ($(OS),Windows_NT)
 		endif
 endif
 
+CC ?= gcc
 CFLAGS=-Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
 
 ifeq ($(static),true)
