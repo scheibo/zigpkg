@@ -1,18 +1,20 @@
 ROOT=../../../build
 
+CC ?= gcc
+CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
+
 ifneq ($(OS),Windows_NT)
 		RPATH := -Wl,-rpath
 		UNAME := $(shell uname -s)
 		ifeq ($(UNAME),Linux)
 				RPATH := "$(RPATH),\$$ORIGIN/$(ROOT)/lib"
+
 		endif
 		ifeq ($(UNAME),Darwin)
 				RPATH := "$(RPATH),@executable_path/$(ROOT)/lib"
+				CFLAGS += -mmacosx-version-min=$(shell sw_vers -productVersion)
 		endif
 endif
-
-CC ?= gcc
-CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
 
 suffix ?= $(if $(findstring foo,$(options)),-foo,)
 ifeq ($(static),true)
