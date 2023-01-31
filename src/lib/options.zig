@@ -1,7 +1,7 @@
 const build_options = @import("build_options");
 const root = @import("root");
 
-pub const Options = struct {
+pub const Options = extern struct {
     foo: bool = false,
     bar: bool = false,
     baz: bool = true,

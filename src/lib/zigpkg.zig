@@ -1,6 +1,7 @@
 const std = @import("std");
 
-const options = @import("options.zig");
+pub const options = @import("options.zig");
+pub const Options = options.Options;
 
 const expectEqual = std.testing.expectEqual;
 

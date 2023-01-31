@@ -35,8 +35,11 @@ pub fn build(b: *Builder) !void {
 
     const static_lib = b.addStaticLibrary(lib, "src/lib/binding/c.zig");
     static_lib.addOptions("build_options", options);
+    static_lib.setMainPkgPath("./");
     static_lib.setBuildMode(mode);
     static_lib.setTarget(target);
+    static_lib.bundle_compiler_rt = true;
+
     if (@hasDecl(std.build.LibExeObjStep, "addIncludePath")) {
         static_lib.addIncludePath("src/include");
     } else {
@@ -48,6 +51,7 @@ pub fn build(b: *Builder) !void {
     const versioned = .{ .versioned = try std.builtin.Version.parse(version) };
     const dynamic_lib = b.addSharedLibrary(lib, "src/lib/binding/c.zig", versioned);
     dynamic_lib.addOptions("build_options", options);
+    dynamic_lib.setMainPkgPath("./");
     dynamic_lib.setBuildMode(mode);
     dynamic_lib.setTarget(target);
     if (@hasDecl(std.build.LibExeObjStep, "addIncludePath")) {
@@ -68,6 +72,7 @@ pub fn build(b: *Builder) !void {
             node_lib.addSystemIncludeDir(headers);
         }
         node_lib.addOptions("build_options", options);
+        node_lib.setMainPkgPath("./");
         node_lib.setBuildMode(mode);
         node_lib.setTarget(target);
         node_lib.linkLibC();
