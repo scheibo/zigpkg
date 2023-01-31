@@ -1,13 +1,14 @@
 ROOT=../../../zig-out
 
 ifneq ($(OS),Windows_NT)
-    UNAME := $(shell uname -s)
-    ifeq ($(UNAME),Linux)
-        RPATH := $(RPATH),$$ORIGIN/$(ROOT)/lib
-    endif
-    ifeq ($(UNAME),Darwin)
-        RPATH := "$(RPATH),@executable_path/$(ROOT)/lib"
-    endif
+		RPATH := -Wl,-rpath
+		UNAME := $(shell uname -s)
+		ifeq ($(UNAME),Linux)
+				RPATH := $(RPATH),$$ORIGIN/$(ROOT)/lib
+		endif
+		ifeq ($(UNAME),Darwin)
+				RPATH := "$(RPATH),@executable_path/$(ROOT)/lib"
+		endif
 endif
 
 CFLAGS=-Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
