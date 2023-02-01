@@ -1,9 +1,9 @@
 const std = @import("std");
 const zigpkg = @import("lib/zigpkg/build.zig");
 
-pub fn build(b: *std.build.Builder) void {
+pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const mode = b.standardReleaseOptions();
+    const optimize = b.standardOptimizeOption(.{});
 
     const foo = b.option(bool, "foo", "Enable foo") orelse false;
     const bar = b.option(bool, "bar", "Enable bar") orelse false;
@@ -14,9 +14,12 @@ pub fn build(b: *std.build.Builder) void {
 
     const build_options = options.getPackage("build_options");
 
-    const exe = b.addExecutable("zig", "example.zig");
-    exe.setTarget(target);
-    exe.setBuildMode(mode);
+    const exe = b.addExecutable(.{
+        .name = "example",
+        .root_source_file = .{ .path = "example.zig" },
+        .optimize = optimize,
+        .target = target,
+    });
     exe.addPackage(zigpkg.pkg(b, build_options));
     exe.install();
 

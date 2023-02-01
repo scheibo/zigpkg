@@ -1,21 +1,16 @@
 const std = @import("std");
 
-const Builder = std.build.Builder;
-const Pkg = std.build.Pkg;
+const Pkg = std.Build.Pkg;
 
-pub fn pkg(b: *Builder, build_options: Pkg) Pkg {
+pub fn pkg(b: *std.Build, build_options: Pkg) Pkg {
     const dirname = comptime std.fs.path.dirname(@src().file) orelse ".";
     const source = .{ .path = dirname ++ "/src/lib/zigpkg.zig" };
-    const package = if (@hasField(Pkg, "path"))
-        Pkg{ .name = "zigpkg", .path = source, .dependencies = &.{build_options} }
-    else
-        Pkg{ .name = "zigpkg", .source = source, .dependencies = &.{build_options} };
-    return b.dupePkg(package);
+    return b.dupePkg(Pkg{ .name = "zigpkg", .source = source, .dependencies = &.{build_options} });
 }
 
-pub fn build(b: *Builder) !void {
-    const mode = b.standardReleaseOptions();
+pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
 
     var parser = std.json.Parser.init(b.allocator, false);
     defer parser.deinit();
@@ -33,48 +28,44 @@ pub fn build(b: *Builder) !void {
 
     const lib = if (foo) "zigpkg-foo" else "zigpkg";
 
-    const static_lib = b.addStaticLibrary(lib, "src/lib/binding/c.zig");
+    const static_lib = b.addStaticLibrary(.{
+        .name = lib,
+        .root_source_file = .{ .path = "src/lib/binding/c.zig" },
+        .optimize = optimize,
+        .target = target,
+    });
     static_lib.addOptions("build_options", options);
     static_lib.setMainPkgPath("./");
-    static_lib.setBuildMode(mode);
-    static_lib.setTarget(target);
+    static_lib.addIncludePath("src/include");
     static_lib.bundle_compiler_rt = true;
-
-    if (@hasDecl(std.build.LibExeObjStep, "addIncludePath")) {
-        static_lib.addIncludePath("src/include");
-    } else {
-        static_lib.addIncludeDir("src/include");
-    }
     static_lib.strip = strip;
     static_lib.install();
 
-    const versioned = .{ .versioned = try std.builtin.Version.parse(version) };
-    const dynamic_lib = b.addSharedLibrary(lib, "src/lib/binding/c.zig", versioned);
+    const dynamic_lib = b.addSharedLibrary(.{
+        .name = lib,
+        .root_source_file = .{ .path = "src/lib/binding/c.zig" },
+        .version = try std.builtin.Version.parse(version),
+        .optimize = optimize,
+        .target = target,
+    });
     dynamic_lib.addOptions("build_options", options);
     dynamic_lib.setMainPkgPath("./");
-    dynamic_lib.setBuildMode(mode);
-    dynamic_lib.setTarget(target);
-    if (@hasDecl(std.build.LibExeObjStep, "addIncludePath")) {
-        dynamic_lib.addIncludePath("src/include");
-    } else {
-        dynamic_lib.addIncludeDir("src/include");
-    }
+    dynamic_lib.addIncludePath("src/include");
     dynamic_lib.strip = strip;
     dynamic_lib.install();
 
     const node_headers = b.option([]const u8, "node-headers", "Path to node-headers");
     if (node_headers) |headers| {
         const name = b.fmt("{s}.node", .{lib});
-        const node_lib = b.addSharedLibrary(name, "src/lib/binding/node.zig", .unversioned);
-        if (@hasDecl(std.build.LibExeObjStep, "addSystemIncludePath")) {
-            node_lib.addSystemIncludePath(headers);
-        } else {
-            node_lib.addSystemIncludeDir(headers);
-        }
+        const node_lib = b.addSharedLibrary(.{
+            .name = name,
+            .root_source_file = .{ .path = "src/lib/binding/node.zig" },
+            .optimize = optimize,
+            .target = target,
+        });
         node_lib.addOptions("build_options", options);
         node_lib.setMainPkgPath("./");
-        node_lib.setBuildMode(mode);
-        node_lib.setTarget(target);
+        node_lib.addSystemIncludePath(headers);
         node_lib.linkLibC();
         node_lib.linker_allow_shlib_undefined = true;
         node_lib.strip = strip;
@@ -125,12 +116,15 @@ pub fn build(b: *Builder) !void {
     const test_no_exec =
         b.option(bool, "test-no-exec", "Compiles test binary without running it") orelse false;
 
-    const tests = if (test_no_exec) b.addTestExe("test_exe", test_file) else b.addTest(test_file);
+    const tests = b.addTest(.{
+        .root_source_file = .{ .path = test_file },
+        .kind = if (test_no_exec) .test_exe else .@"test",
+        .optimize = optimize,
+        .target = target,
+    });
     tests.setMainPkgPath("./");
     tests.setFilter(test_filter);
     tests.addOptions("build_options", options);
-    tests.setBuildMode(mode);
-    tests.setTarget(target);
     tests.single_threaded = true;
     tests.strip = strip;
     if (test_bin) |bin| {
