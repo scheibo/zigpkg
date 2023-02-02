@@ -110,12 +110,15 @@ integration: build check example
 benchmark:
 	npm run benchmark
 
-.PHONY: clean
-clean:
-	rm -rf zig-* build .tsbuildinfo .eslintcache
+.PHONY: clean-example
+clean-example:
 	$(MAKE) clean -C src/examples/c
 	rm -rf src/examples/js/.parcel* src/examples/js/dist
 	rm -rf src/examples/zig/zig-*
+
+.PHONY: clean
+clean: clean-example
+	rm -rf zig-* build .tsbuildinfo .eslintcache
 
 .PHONY: release
 release:

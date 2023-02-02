@@ -38,4 +38,5 @@ jobs:
       - run: npm test
       - run: make lint
       - run: make example options="${{matrix.options}}"
+      - run: make clean-example
       - run: make example options="${{matrix.options}}" static=true
