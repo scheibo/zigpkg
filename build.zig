@@ -20,6 +20,7 @@ pub fn build(b: *std.Build) !void {
 
     const foo = b.option(bool, "foo", "Enable foo") orelse false;
     const bar = b.option(bool, "bar", "Enable bar") orelse false;
+    const dynamic = b.option(bool, "dynamic", "Build a dynamic library") orelse false;
     const strip = b.option(bool, "strip", "Strip debugging symbols from binary") orelse false;
 
     const options = b.addOptions();
@@ -28,31 +29,33 @@ pub fn build(b: *std.Build) !void {
 
     const lib = if (foo) "zigpkg-foo" else "zigpkg";
 
-    const static_lib = b.addStaticLibrary(.{
-        .name = lib,
-        .root_source_file = .{ .path = "src/lib/binding/c.zig" },
-        .optimize = optimize,
-        .target = target,
-    });
-    static_lib.addOptions("build_options", options);
-    static_lib.setMainPkgPath("./");
-    static_lib.addIncludePath("src/include");
-    static_lib.bundle_compiler_rt = true;
-    static_lib.strip = strip;
-    static_lib.install();
-
-    const dynamic_lib = b.addSharedLibrary(.{
-        .name = lib,
-        .root_source_file = .{ .path = "src/lib/binding/c.zig" },
-        .version = try std.builtin.Version.parse(version),
-        .optimize = optimize,
-        .target = target,
-    });
-    dynamic_lib.addOptions("build_options", options);
-    dynamic_lib.setMainPkgPath("./");
-    dynamic_lib.addIncludePath("src/include");
-    dynamic_lib.strip = strip;
-    dynamic_lib.install();
+    if (dynamic) {
+        const dynamic_lib = b.addSharedLibrary(.{
+            .name = lib,
+            .root_source_file = .{ .path = "src/lib/binding/c.zig" },
+            .version = try std.builtin.Version.parse(version),
+            .optimize = optimize,
+            .target = target,
+        });
+        dynamic_lib.addOptions("build_options", options);
+        dynamic_lib.setMainPkgPath("./");
+        dynamic_lib.addIncludePath("src/include");
+        dynamic_lib.strip = strip;
+        dynamic_lib.install();
+    } else {
+        const static_lib = b.addStaticLibrary(.{
+            .name = lib,
+            .root_source_file = .{ .path = "src/lib/binding/c.zig" },
+            .optimize = optimize,
+            .target = target,
+        });
+        static_lib.addOptions("build_options", options);
+        static_lib.setMainPkgPath("./");
+        static_lib.addIncludePath("src/include");
+        static_lib.bundle_compiler_rt = true;
+        static_lib.strip = strip;
+        static_lib.install();
+    }
 
     const node_headers = b.option([]const u8, "node-headers", "Path to node-headers");
     if (node_headers) |headers| {
