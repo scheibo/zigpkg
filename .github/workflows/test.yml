@@ -38,6 +38,6 @@ jobs:
       - run: make lint
       - run: zig build ${{matrix.options}} -p build
       - run: make example options="${{matrix.options}}"
-      - run: make clean
+      - run: make clean && node src/bin/install-zigpkg --zig
       - run: zig build ${{matrix.options}} -p build -Ddynamic
       - run: make example options="${{matrix.options}}" dynamic=true
