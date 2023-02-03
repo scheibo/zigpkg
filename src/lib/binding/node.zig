@@ -41,12 +41,12 @@ fn registerFunction(
 fn registerOptions(env: c.napi_env, exports: c.napi_value, comptime name: [:0]const u8) !void {
     var object = try Write.object(env, name);
 
-    // inline for (@typeInfo(zigpkg.Options).Struct.fields) |field| {
-    //     const value = Write.boolean(env, @field(zigpkg.options, field.name), field.name);
-    //     if (c.napi_set_named_property(env, object, field.name, value) != c.napi_ok) {
-    //       return throw(.Error, env, "Failed to set property '" ++ field.name ++ "' of " ++ name);
-    //   }
-    // }
+    inline for (.{"foo", "bar", "baz", "qux"}) |prop| {
+        const value = try Write.boolean(env, @field(zigpkg.options, prop), prop);
+        if (c.napi_set_named_property(env, object, prop, value) != c.napi_ok) {
+          return throw(.Error, env, "Failed to set property '" ++ prop ++ "' of " ++ name);
+      }
+    }
 
     if (c.napi_set_named_property(env, exports, name, object) != c.napi_ok) {
         return throw(.Error, env, "Failed to add " ++ name ++ " to exports.");
