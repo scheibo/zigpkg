@@ -1,8 +1,6 @@
 # On the GitHub CI where this example runs we install everything locally instead of using something
 # like `--prefix /usr/local` which complicates things as we can't rely on default search semantics.
-ROOT=../../../build
-CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
-
+#
 # `suffix` (to opt into libzigpkg-foo) or `dynamic` may be set to opt into different linking
 # semantics. `options` is a bit of a hack to simplify the GitHub CI as its easier than passing
 # the correct suffix in the YAML.
@@ -16,19 +14,25 @@ CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
 # would otherwise just be the major version.
 #
 # TODO: Add examples demonstrating Windows support...
+
+ROOT=../../../build
+CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
+
 suffix ?= $(if $(findstring foo,$(options)),-foo,)
-ifeq ($(dynamic),true)
-	ifneq ($(OS),Windows_NT)
-		RPATH := -Wl,-rpath
-		UNAME := $(shell uname -s)
-		ifeq ($(UNAME),Linux)
-				RPATH := "$(RPATH),\$$ORIGIN/$(ROOT)/lib"
-		endif
-		ifeq ($(UNAME),Darwin)
-				RPATH := "$(RPATH),@executable_path/$(ROOT)/lib"
-				CFLAGS += -mmacosx-version-min=$(shell sw_vers -productVersion)
-		endif
+
+ifneq ($(OS),Windows_NT)
+	RPATH := -Wl,-rpath
+	UNAME := $(shell uname -s)
+	ifeq ($(UNAME),Linux)
+			RPATH := "$(RPATH),\$$ORIGIN/$(ROOT)/lib"
 	endif
+	ifeq ($(UNAME),Darwin)
+			RPATH := "$(RPATH),@executable_path/$(ROOT)/lib"
+			CFLAGS += -mmacosx-version-min=$(shell sw_vers -productVersion)
+	endif
+endif
+
+ifeq ($(dynamic),true)
 	LDFLAGS = $(RPATH) -L$(ROOT)/lib -lzigpkg$(suffix)
 else
 	ifeq ($(OS),Windows_NT)
