@@ -1,5 +1,5 @@
-# The root Makefile passes `-p build`, but if you install to a standard system directory (eg.
-# `/usr`) a lot of this setup becomes simpler (e.g. no need to mess around with the `RPATH`).
+# On the GitHub CI where this example runs we install everything locally instead of using something
+# like `--prefix /usr/local` which complicates things as we can't rely on default search semantics.
 ROOT=../../../build
 CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
 
@@ -14,6 +14,8 @@ CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
 # On macOS we also need to set `-mmacosx-version-min` on our executable as Zig will set the precise
 # version on the library it builds which will result in warnings as the default for the C executable
 # would otherwise just be the major version.
+#
+# TODO: Add examples demonstrating Windows support...
 suffix ?= $(if $(findstring foo,$(options)),-foo,)
 ifeq ($(dynamic),true)
 	ifneq ($(OS),Windows_NT)
@@ -29,14 +31,23 @@ ifeq ($(dynamic),true)
 	endif
 	LDFLAGS = $(RPATH) -L$(ROOT)/lib -lzigpkg$(suffix)
 else
-	LDFLAGS = $(ROOT)/lib/libzigpkg$(suffix).a
+	ifeq ($(OS),Windows_NT)
+		LDFLAGS = $(ROOT)/lib/zigpkg$(suffix).lib
+	else
+		LDFLAGS = $(ROOT)/lib/libzigpkg$(suffix).a
+	endif
 endif
 
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+ifeq ($(OS),Windows_NT)
+example:
+	@echo "TODO"
+else
 example: example.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
+endif
 
 .PHONY: clean
 clean:

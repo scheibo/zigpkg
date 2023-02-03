@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest] # windows-latest
+        os: [ubuntu-latest, macos-latest, windows-latest]
         options: ['', '-Dfoo', '-Dbar', '-Dfoo -Dbar']
         zig: [local] # master
     runs-on: ${{matrix.os}}
