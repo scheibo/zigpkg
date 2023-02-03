@@ -7,8 +7,14 @@ const c = @cImport({
 });
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
-    registerFunction(env, exports, "add", add) catch return null;
-    registerOptions(env, exports, "options") catch return null;
+    const opts = options(env, "options") catch return null;
+    const properties = [_]c.napi_property_descriptor{
+        prop("add", .{ .Method = add }),
+        prop("options", .{ .Value = opts }),
+    };
+    if (c.napi_define_properties(env, exports, properties.len, &properties) != c.napi_ok) {
+        throw(.Error, env, "Failed to set exports") catch return null;
+    }
     return exports;
 }
 
@@ -23,38 +29,47 @@ fn add(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return Write.uint8(env, zigpkg.add(n), "result") catch return null;
 }
 
-fn registerFunction(
-    env: c.napi_env,
-    exports: c.napi_value,
-    comptime name: [:0]const u8,
-    function: *const fn (env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value,
-) !void {
-    var napi_function: c.napi_value = undefined;
-    if (c.napi_create_function(env, null, 0, function, null, &napi_function) != c.napi_ok) {
-        return throw(.Error, env, "Failed to create function " ++ name ++ "().");
+fn options(env: c.napi_env, comptime name: [:0]const u8) !c.napi_value {
+    var object = try Write.object(env, name);
+    const properties = [_]c.napi_property_descriptor{
+        prop("foo", .{ .Value = try Write.boolean(env, zigpkg.options.foo, "foo") }),
+        prop("bar", .{ .Value = try Write.boolean(env, zigpkg.options.bar, "bar") }),
+        prop("baz", .{ .Value = try Write.boolean(env, zigpkg.options.baz, "baz") }),
+        prop("qux", .{ .Value = try Write.boolean(env, zigpkg.options.qux, "qux") }),
+    };
+    if (c.napi_define_properties(env, object, properties.len, &properties) != c.napi_ok) {
+        return throw(.Error, env, "Failed to set fields of " ++ name);
     }
-    if (c.napi_set_named_property(env, exports, name, napi_function) != c.napi_ok) {
-        return throw(.Error, env, "Failed to add " ++ name ++ "() to exports.");
-    }
+    return object;
 }
 
-fn registerOptions(env: c.napi_env, exports: c.napi_value, comptime name: [:0]const u8) !void {
-    var object = try Write.object(env, name);
+const Property = union(enum) {
+    Method: c.napi_callback,
+    Value: c.napi_value,
+};
 
-    inline for (.{"foo", "bar", "baz", "qux"}) |prop| {
-        const value = try Write.boolean(env, @field(zigpkg.options, prop), prop);
-        if (c.napi_set_named_property(env, object, prop, value) != c.napi_ok) {
-          return throw(.Error, env, "Failed to set property '" ++ prop ++ "' of " ++ name);
-      }
-    }
-
-    if (c.napi_set_named_property(env, exports, name, object) != c.napi_ok) {
-        return throw(.Error, env, "Failed to add " ++ name ++ " to exports.");
-    }
+fn prop(comptime name: [:0]const u8, property: Property) c.napi_property_descriptor {
+    return .{
+        .utf8name = name,
+        .name = null,
+        .method = switch (property) {
+            .Method => |m| m,
+            else => null,
+        },
+        .getter = null,
+        .setter = null,
+        .value = switch (property) {
+            .Value => |v| v,
+            else => null,
+        },
+        .attributes = c.napi_default,
+        .data = null,
+    };
 }
 
 const Kind = enum { Error, TypeError };
 const TranslationError = error{ExceptionThrown};
+
 fn throw(comptime kind: Kind, env: c.napi_env, comptime message: [:0]const u8) TranslationError {
     var result = switch (kind) {
         .Error => c.napi_throw_error(env, null, message),
