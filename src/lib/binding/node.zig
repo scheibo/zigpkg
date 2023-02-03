@@ -16,9 +16,9 @@ fn add(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     var argc: usize = 1;
     var argv: [1]c.napi_value = undefined;
     if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
-        throw(env, "Failed to get args") catch return null;
+        throw(.Error, env, "Failed to get args") catch return null;
     }
-    if (argc != 1) throw(env, "add requires exactly 1 argument") catch return null;
+    if (argc != 1) throw(.TypeError, env, "add requires exactly 1 argument") catch return null;
     const n = Read.uint8(env, argv[0], "n") catch return null;
     return Write.uint8(env, zigpkg.add(n), "result") catch return null;
 }
@@ -31,10 +31,10 @@ fn registerFunction(
 ) !void {
     var napi_function: c.napi_value = undefined;
     if (c.napi_create_function(env, null, 0, function, null, &napi_function) != c.napi_ok) {
-        return throw(env, "Failed to create function " ++ name ++ "().");
+        return throw(.Error, env, "Failed to create function " ++ name ++ "().");
     }
     if (c.napi_set_named_property(env, exports, name, napi_function) != c.napi_ok) {
-        return throw(env, "Failed to add " ++ name ++ "() to exports.");
+        return throw(.Error, env, "Failed to add " ++ name ++ "() to exports.");
     }
 }
 
@@ -44,19 +44,22 @@ fn registerOptions(env: c.napi_env, exports: c.napi_value, comptime name: [:0]co
     // inline for (@typeInfo(zigpkg.Options).Struct.fields) |field| {
     //     const value = Write.boolean(env, @field(zigpkg.options, field.name), field.name);
     //     if (c.napi_set_named_property(env, object, field.name, value) != c.napi_ok) {
-    //       return throw(env, "Failed to set property '" ++ field.name ++ "' of " ++ name);
+    //       return throw(.Error, env, "Failed to set property '" ++ field.name ++ "' of " ++ name);
     //   }
     // }
 
     if (c.napi_set_named_property(env, exports, name, object) != c.napi_ok) {
-        return throw(env, "Failed to add " ++ name ++ " to exports.");
+        return throw(.Error, env, "Failed to add " ++ name ++ " to exports.");
     }
 }
 
+const Kind = enum { Error, TypeError };
 const TranslationError = error{ExceptionThrown};
-
-fn throw(env: c.napi_env, comptime message: [:0]const u8) TranslationError {
-    var result = c.napi_throw_error(env, null, message);
+fn throw(comptime kind: Kind, env: c.napi_env, comptime message: [:0]const u8) TranslationError {
+    var result = switch (kind) {
+        .Error => c.napi_throw_error(env, null, message),
+        .TypeError => c.napi_throw_type_error(env, null, message),
+    };
     switch (result) {
         c.napi_ok, c.napi_pending_exception => {},
         else => unreachable,
@@ -73,7 +76,7 @@ const Read = struct {
         var result: u32 = undefined;
         switch (c.napi_get_value_uint32(env, value, &result)) {
             c.napi_ok => {},
-            c.napi_number_expected => return throw(env, name ++ " must be a number"),
+            c.napi_number_expected => return throw(.Error, env, name ++ " must be a number"),
             else => unreachable,
         }
         return result;
@@ -83,7 +86,7 @@ const Read = struct {
         var result: u32 = undefined;
         switch (c.napi_get_value_bool(env, value, &result)) {
             c.napi_ok => {},
-            c.napi_boolean_expected => return throw(env, name ++ " must be a boolean"),
+            c.napi_boolean_expected => return throw(.Error, env, name ++ " must be a boolean"),
             else => unreachable,
         }
         return result;
@@ -98,7 +101,7 @@ const Write = struct {
     fn uint32(env: c.napi_env, value: u32, comptime name: [:0]const u8) !c.napi_value {
         var result: c.napi_value = undefined;
         if (c.napi_create_uint32(env, value, &result) != c.napi_ok) {
-            return throw(env, "Failed to create number " ++ name);
+            return throw(.Error, env, "Failed to create number " ++ name);
         }
         return result;
     }
@@ -106,7 +109,7 @@ const Write = struct {
     fn boolean(env: c.napi_env, value: bool, comptime name: [:0]const u8) !c.napi_value {
         var result: c.napi_value = undefined;
         if (c.napi_get_boolean(env, value, &result) != c.napi_ok) {
-            return throw(env, "Failed to create boolean " ++ name);
+            return throw(.Error, env, "Failed to create boolean " ++ name);
         }
         return result;
     }
@@ -114,7 +117,7 @@ const Write = struct {
     fn object(env: c.napi_env, comptime name: [:0]const u8) !c.napi_value {
         var result: c.napi_value = undefined;
         if (c.napi_create_object(env, &result) != c.napi_ok) {
-            return throw(env, "Failed to create object " ++ name);
+            return throw(.Error, env, "Failed to create object " ++ name);
         }
         return result;
     }
