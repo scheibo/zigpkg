@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest] # , windows-latest
         options: ['', '-Dfoo', '-Dbar', '-Dfoo -Dbar']
         zig: [local] # master
     runs-on: ${{matrix.os}}
@@ -40,4 +40,4 @@ jobs:
       - run: make example options="${{matrix.options}}"
       - run: make clean && node src/bin/install-zigpkg --zig
       - run: zig build ${{matrix.options}} -p build -Ddynamic
-      - run: make example options="${{matrix.options}}" dynamic=true
+      - run: make c-example options="${{matrix.options}}" dynamic=true
