@@ -22,6 +22,7 @@ pub fn build(b: *std.Build) !void {
     const bar = b.option(bool, "bar", "Enable bar") orelse false;
     const dynamic = b.option(bool, "dynamic", "Build a dynamic library") orelse false;
     const strip = b.option(bool, "strip", "Strip debugging symbols from binary") orelse false;
+    const pic = b.option(bool, "pic", "Force position independent code") orelse false;
 
     const options = b.addOptions();
     options.addOption(bool, "foo", foo);
@@ -41,6 +42,7 @@ pub fn build(b: *std.Build) !void {
         dynamic_lib.setMainPkgPath("./");
         dynamic_lib.addIncludePath("src/include");
         dynamic_lib.strip = strip;
+        if (pic) dynamic_lib.force_pic = pic;
         dynamic_lib.install();
     } else {
         const static_lib = b.addStaticLibrary(.{
@@ -54,6 +56,7 @@ pub fn build(b: *std.Build) !void {
         static_lib.addIncludePath("src/include");
         static_lib.bundle_compiler_rt = true;
         static_lib.strip = strip;
+        if (pic) static_lib.force_pic = pic;
         static_lib.install();
     }
 
@@ -72,6 +75,7 @@ pub fn build(b: *std.Build) !void {
         node_lib.linkLibC();
         node_lib.linker_allow_shlib_undefined = true;
         node_lib.strip = strip;
+        if (pic) node_lib.force_pic = pic;
         node_lib.emit_bin = .{ .emit_to = b.fmt("build/lib/{s}", .{name}) };
         b.getInstallStep().dependOn(&node_lib.step);
     }
@@ -130,6 +134,7 @@ pub fn build(b: *std.Build) !void {
     tests.addOptions("build_options", options);
     tests.single_threaded = true;
     tests.strip = strip;
+    if (pic) tests.force_pic = pic;
     if (test_bin) |bin| {
         tests.name = std.fs.path.basename(bin);
         if (std.fs.path.dirname(bin)) |dir| tests.setOutputDir(dir);
