@@ -12,15 +12,13 @@ pub fn build(b: *std.Build) void {
     options.addOption(bool, "foo", foo);
     options.addOption(bool, "bar", bar);
 
-    const build_options = options.getPackage("build_options");
-
     const exe = b.addExecutable(.{
         .name = "example",
         .root_source_file = .{ .path = "example.zig" },
         .optimize = optimize,
         .target = target,
     });
-    exe.addPackage(zigpkg.pkg(b, build_options));
+    exe.addModule("zigpkg", zigpkg.module(b, options.createModule()));
     exe.install();
 
     const run_cmd = exe.run();

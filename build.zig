@@ -1,11 +1,11 @@
 const std = @import("std");
 
-const Pkg = std.Build.Pkg;
-
-pub fn pkg(b: *std.Build, build_options: Pkg) Pkg {
+pub fn module(b: *std.Build, build_options: *std.Build.Module) *std.Build.Module {
     const dirname = comptime std.fs.path.dirname(@src().file) orelse ".";
-    const source = .{ .path = dirname ++ "/src/lib/zigpkg.zig" };
-    return b.dupePkg(Pkg{ .name = "zigpkg", .source = source, .dependencies = &.{build_options} });
+    return b.createModule(.{
+        .source_file = .{ .path = dirname ++ "/src/lib/zigpkg.zig" },
+        .dependencies = &.{.{ .name = "build_options", .module = build_options }},
+    });
 }
 
 pub fn build(b: *std.Build) !void {
