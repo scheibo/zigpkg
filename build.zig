@@ -44,7 +44,7 @@ pub fn build(b: *std.Build) !void {
         dynamic_lib.addOptions("build_options", options);
         dynamic_lib.setMainPkgPath("./");
         dynamic_lib.addIncludePath("src/include");
-        maybeStrip(b, dynamic_lib, b.getInstallStep(), strip, cmd);
+        maybeStrip(b, dynamic_lib, b.getInstallStep(), strip, cmd, null);
         if (pic) dynamic_lib.force_pic = pic;
         dynamic_lib.install();
     } else {
@@ -58,7 +58,7 @@ pub fn build(b: *std.Build) !void {
         static_lib.setMainPkgPath("./");
         static_lib.addIncludePath("src/include");
         static_lib.bundle_compiler_rt = true;
-        maybeStrip(b, static_lib, b.getInstallStep(), strip, cmd);
+        maybeStrip(b, static_lib, b.getInstallStep(), strip, cmd, null);
         if (pic) static_lib.force_pic = pic;
         static_lib.install();
     }
@@ -77,9 +77,10 @@ pub fn build(b: *std.Build) !void {
         node_lib.addSystemIncludePath(headers);
         node_lib.linkLibC();
         node_lib.linker_allow_shlib_undefined = true;
-        maybeStrip(b, node_lib, b.getInstallStep(), strip, cmd);
+        const out = b.fmt("build/lib/{s}", .{name});
+        maybeStrip(b, node_lib, b.getInstallStep(), strip, cmd, out);
         if (pic) node_lib.force_pic = pic;
-        node_lib.emit_bin = .{ .emit_to = b.fmt("build/lib/{s}", .{name}) };
+        node_lib.emit_bin = .{ .emit_to = out };
         b.getInstallStep().dependOn(&node_lib.step);
     }
 
@@ -136,7 +137,7 @@ pub fn build(b: *std.Build) !void {
     tests.setFilter(test_filter);
     tests.addOptions("build_options", options);
     tests.single_threaded = true;
-    maybeStrip(b, tests, &tests.step, strip, cmd);
+    maybeStrip(b, tests, &tests.step, strip, cmd, null);
     if (pic) tests.force_pic = pic;
     if (test_bin) |bin| {
         tests.name = std.fs.path.basename(bin);
@@ -158,12 +159,21 @@ fn maybeStrip(
     step: *std.Build.Step,
     strip: bool,
     cmd: ?[]const u8,
+    out: ?[]const u8,
 ) void {
     artifact.strip = strip;
-    const mac = builtin.os.tag == .macos;
+    if (!strip or cmd == null) return;
     // Using `strip -r -u` for dynamic libraries is supposed to work on macOS but doesn't...
-    if (!strip or cmd == null or (mac and artifact.isDynamicLibrary())) return;
+    const mac = builtin.os.tag == .macos;
+    if (mac and artifact.isDynamicLibrary()) return;
+    // Assuming GNU strip, which complains "illegal pathname found in archive member"...
+    if (!mac and artifact.isStaticLibrary()) return;
     const sh = b.addSystemCommand(&[_][]const u8{ cmd.?, if (mac) "-x" else "-s" });
-    sh.addArtifactArg(artifact);
+    if (out) |path| {
+        sh.addArg(path);
+        sh.step.dependOn(&artifact.step);
+    } else {
+        sh.addArtifactArg(artifact);
+    }
     step.dependOn(&sh.step);
 }
