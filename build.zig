@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 pub fn module(b: *std.Build, build_options: *std.Build.Module) *std.Build.Module {
     const dirname = comptime std.fs.path.dirname(@src().file) orelse ".";
@@ -24,6 +25,8 @@ pub fn build(b: *std.Build) !void {
     const strip = b.option(bool, "strip", "Strip debugging symbols from binary") orelse false;
     const pic = b.option(bool, "pic", "Force position independent code") orelse false;
 
+    const cmd = b.findProgram(&[_][]const u8{"strip"}, &[_][]const u8{}) catch null;
+
     const options = b.addOptions();
     options.addOption(bool, "foo", foo);
     options.addOption(bool, "bar", bar);
@@ -41,7 +44,7 @@ pub fn build(b: *std.Build) !void {
         dynamic_lib.addOptions("build_options", options);
         dynamic_lib.setMainPkgPath("./");
         dynamic_lib.addIncludePath("src/include");
-        dynamic_lib.strip = strip;
+        maybeStrip(b, dynamic_lib, b.getInstallStep(), strip, cmd);
         if (pic) dynamic_lib.force_pic = pic;
         dynamic_lib.install();
     } else {
@@ -55,7 +58,7 @@ pub fn build(b: *std.Build) !void {
         static_lib.setMainPkgPath("./");
         static_lib.addIncludePath("src/include");
         static_lib.bundle_compiler_rt = true;
-        static_lib.strip = strip;
+        maybeStrip(b, static_lib, b.getInstallStep(), strip, cmd);
         if (pic) static_lib.force_pic = pic;
         static_lib.install();
     }
@@ -74,7 +77,7 @@ pub fn build(b: *std.Build) !void {
         node_lib.addSystemIncludePath(headers);
         node_lib.linkLibC();
         node_lib.linker_allow_shlib_undefined = true;
-        node_lib.strip = strip;
+        maybeStrip(b, node_lib, b.getInstallStep(), strip, cmd);
         if (pic) node_lib.force_pic = pic;
         node_lib.emit_bin = .{ .emit_to = b.fmt("build/lib/{s}", .{name}) };
         b.getInstallStep().dependOn(&node_lib.step);
@@ -133,7 +136,7 @@ pub fn build(b: *std.Build) !void {
     tests.setFilter(test_filter);
     tests.addOptions("build_options", options);
     tests.single_threaded = true;
-    tests.strip = strip;
+    maybeStrip(b, tests, &tests.step, strip, cmd);
     if (pic) tests.force_pic = pic;
     if (test_bin) |bin| {
         tests.name = std.fs.path.basename(bin);
@@ -147,4 +150,20 @@ pub fn build(b: *std.Build) !void {
 
     b.step("format", "Format source files").dependOn(&format.step);
     b.step("test", "Run all tests").dependOn(&tests.step);
+}
+
+fn maybeStrip(
+    b: *std.Build,
+    artifact: *std.Build.CompileStep,
+    step: *std.Build.Step,
+    strip: bool,
+    cmd: ?[]const u8,
+) void {
+    artifact.strip = strip;
+    const mac = builtin.os.tag == .macos;
+    // Using `strip -r -u` for dynamic libraries is supposed to work on macOS but doesn't...
+    if (!strip or cmd == null or (mac and artifact.isDynamicLibrary())) return;
+    const sh = b.addSystemCommand(&[_][]const u8{ cmd.?, if (mac) "-x" else "-s" });
+    sh.addArtifactArg(artifact);
+    step.dependOn(&sh.step);
 }
