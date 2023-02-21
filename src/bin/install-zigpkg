@@ -181,7 +181,6 @@ const headers = async () => {
   const include = path.resolve(process.execPath, '../../include/node');
   if (fs.existsSync(path.join(include, 'node.h'))) {
     console.log('Node headers:', include);
-
     return include;
   } else {
     console.log(`Could not find node headers at ${include}, downloading...`);
@@ -206,12 +205,40 @@ const headers = async () => {
   return dest;
 };
 
+const lib = async() => {
+  const library = path.resolve(process.execPath, '../node.lib');
+  if (fs.existsSync(path.join(library, 'node.h'))) {
+    console.log('Node import library:', library);
+    return library;
+  } else {
+    console.log(`Could not find node import library at ${library}, downloading...`);
+  }
+
+  const dir = path.join(ROOT, 'build', 'lib');
+  try {
+    fs.mkdirSync(dir, {recursive: true});
+  } catch (err) {
+    if (err.code !== 'EEXIST') throw err;
+  }
+
+  const url = url.resolve(process.release.headersUrl, './win-x64/node.lib');
+  const dest = `${dir}/${path.basename(url)}`;
+
+  console.log(`Downloading Node headers from ${url} to ${dest}`);
+  await download(url, dest);
+  console.log('Node import library:', dest);
+
+  return dest;
+};
+
 (async () => {
   const zig = await install();
   if (process.argv[2] === '--zig') process.exit(0);
-  const include = await headers();
   console.log('Building build/lib/zigpkg-foo.node');
-  sh(zig, ['build', '-Dfoo', '-Doptimize=ReleaseFast', `-Dnode-headers=${include}`, '-Dstrip']);
+  const args = ['build', '-Dfoo', '-Doptimize=ReleaseFast', '-Dstrip'];
+  args.push(`-Dnode-headers=${await headers()}`);
+  if (process.platform === 'win32') args.push(`-Dnode-import-lib=${await lib()}`);
+  sh(zig, args);
 })().catch(e => {
   console.error(e);
   process.exit(1);
