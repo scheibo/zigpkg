@@ -1,6 +1,8 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
+const NativeTargetInfo = std.zig.system.NativeTargetInfo;
+
 pub fn module(b: *std.Build, build_options: *std.Build.Module) *std.Build.Module {
     const dirname = comptime std.fs.path.dirname(@src().file) orelse ".";
     return b.createModule(.{
@@ -48,10 +50,11 @@ pub fn build(b: *std.Build) !void {
         node_lib.setMainPkgPath("./");
         node_lib.addSystemIncludePath(headers);
         node_lib.linkLibC();
+
         if (node_import_lib) |il| {
             if (std.fs.path.dirname(il)) |dir| node_lib.addLibraryPath(dir);
             node_lib.linkSystemLibraryName(std.fs.path.basename(il));
-        } else if (target.os.tag == .windows ) {
+        } else if ((try NativeTargetInfo.detect(target)).target.os.tag == .windows) {
             std.debug.print("Must provide --node-import-library path on Windows");
             std.process.exit(1);
         }
