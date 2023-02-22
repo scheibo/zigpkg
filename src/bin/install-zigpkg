@@ -237,7 +237,7 @@ const lib = async() => {
 
   const args = ['build', '-Dfoo', '-Doptimize=ReleaseFast', '-Dstrip'];
   args.push(`-Dnode-headers=${await headers()}`);
-  if (process.platform === 'win32') args.push(`-Dnode-import-lib=${await lib()}`);
+  if (process.platform === 'win32') args.push(`-Dnode-import-library=${await lib()}`);
 
   console.log('Building build/lib/zigpkg-foo.node');
   sh(zig, args);
