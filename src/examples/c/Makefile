@@ -24,7 +24,6 @@
 ROOT=../../../build
 CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
 
-CC ?= gcc
 suffix ?= $(if $(findstring foo,$(options)),-foo,)
 
 ifneq ($(OS),Windows_NT)
@@ -38,6 +37,8 @@ ifneq ($(OS),Windows_NT)
 			RPATH := "$(RPATH),@executable_path/$(ROOT)/lib"
 			CFLAGS += -mmacosx-version-min=$(shell sw_vers -productVersion)
 	endif
+else
+	CC = gcc
 endif
 
 ifeq ($(dynamic),true)
