@@ -8,6 +8,8 @@
 # The OS won't know where to look for our dynamic libraries unless we configure the rpath to bake it
 # into the executable (or set `LD_LIBRARY_PATH`, use `install_name_tool`, etc). Sadly, the flag
 # requires a different syntax ($ORIGIN vs. @executable_path) for relative paths based on OS.
+# Of course, Windows doesn't support any of this (https://ibob.bg/blog/2018/12/16/windows-rpath/)
+# so we just give up and copy the files into the current directory directly.
 #
 # On macOS we also need to set `-mmacosx-version-min` on our executable as Zig will set the precise
 # version on the library it builds which will result in warnings as the default for the C executable
@@ -34,7 +36,11 @@ ifneq ($(OS),Windows_NT)
 endif
 
 ifeq ($(dynamic),true)
-	LDFLAGS = $(RPATH) -L$(ROOT)/lib -lzigpkg$(suffix)
+	ifeq ($(OS),Windows_NT)
+		LDFLAGS = -L. -lzigpkg$(suffix)
+	else
+		LDFLAGS = $(RPATH) -L$(ROOT)/lib -lzigpkg$(suffix)
+	endif
 else
 	ifeq ($(OS),Windows_NT)
 		LDFLAGS = $(ROOT)/lib/zigpkg$(suffix).lib
@@ -46,16 +52,14 @@ endif
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-ifeq ($(OS),Windows_NT)
-example:
-	@echo "TODO"
-else
 example: example.o
-	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
+ifeq ($(OS),Windows_NT)
+	cp ../../../build/lib/*.{lib,dll} .
 endif
+	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 .PHONY: clean
 clean:
-	rm -f *.o example
+	rm -f *.o *.dll *.lib example
 
 .DEFAULT: example
