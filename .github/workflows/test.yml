@@ -40,6 +40,8 @@ jobs:
       - run: npm test
       - run: make lint
       - uses: mxschmitt/action-tmate@v3 # DEBUG
-      - run: make example options="${{matrix.options}}" static=true
-      - run: make clean-example
+      - run: zig build ${{matrix.options}} -p build
       - run: make example options="${{matrix.options}}"
+      - run: make clean && node src/bin/install-pkmn-engine --zig
+      - run: zig build ${{matrix.options}} -p build -Ddynamic
+      - run: make c-example options="${{matrix.options}}" dynamic=true

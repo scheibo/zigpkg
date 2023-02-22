@@ -9,17 +9,22 @@
 # into the executable (or set `LD_LIBRARY_PATH`, use `install_name_tool`, etc). Sadly, the flag
 # requires a different syntax ($ORIGIN vs. @executable_path) for relative paths based on OS.
 # Of course, Windows doesn't support any of this (https://ibob.bg/blog/2018/12/16/windows-rpath/)
-# so we just give up and copy the files into the current directory directly.
+# so we just give up and copy the files into the current directory directly. This isn't required
+# for static linking on Windows, but for simplicity we copy the artifacts anyway.
 #
 # On macOS we also need to set `-mmacosx-version-min` on our executable as Zig will set the precise
 # version on the library it builds which will result in warnings as the default for the C executable
 # would otherwise just be the major version.
 #
-# TODO: Add examples demonstrating Windows support...
+# Possibly due to some Zig or MinGW issue we need to also need to link against
+# 'C:/Windows/System32/ntdll.dll' (which can't be statically linked to). Some documentation suggests
+# that GCC requires the static library to be named libzigpkg.a instead of zigpkg.lib, but the latter
+# seems to work fine.
 
 ROOT=../../../build
 CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
 
+CC ?= gcc
 suffix ?= $(if $(findstring foo,$(options)),-foo,)
 
 ifneq ($(OS),Windows_NT)
@@ -43,7 +48,7 @@ ifeq ($(dynamic),true)
 	endif
 else
 	ifeq ($(OS),Windows_NT)
-		LDFLAGS = $(ROOT)/lib/zigpkg$(suffix).lib
+		LDFLAGS = zigpkg$(suffix).lib C:/Windows/System32/ntdll.dll
 	else
 		LDFLAGS = $(ROOT)/lib/libzigpkg$(suffix).a
 	endif
@@ -54,7 +59,7 @@ endif
 
 example: example.o
 ifeq ($(OS),Windows_NT)
-	cp ../../../build/lib/*.{lib,dll} .
+	cp ../../../build/lib/zigpkg$(suffix).{lib,dll} .
 endif
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
