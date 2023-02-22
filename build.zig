@@ -52,8 +52,7 @@ pub fn build(b: *std.Build) !void {
         node_lib.linkLibC();
 
         if (node_import_lib) |il| {
-            if (std.fs.path.dirname(il)) |dir| node_lib.addLibraryPath(dir);
-            node_lib.linkSystemLibraryName(std.fs.path.basename(il));
+            node_lib.addObjectFile(il);
         } else if ((try NativeTargetInfo.detect(target)).target.os.tag == .windows) {
             std.debug.print("Must provide --node-import-library path on Windows", .{});
             std.process.exit(1);
