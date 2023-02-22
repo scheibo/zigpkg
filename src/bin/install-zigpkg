@@ -2,6 +2,7 @@
 'use strict';
 
 const https = require('https');
+const url = require('url');
 const path = require('path');
 const fs = require('fs');
 const {execFileSync} = require('child_process');
@@ -16,9 +17,9 @@ const ROOT = path.resolve(__dirname, '../..');
 const sh = (cmd, args) => execFileSync(cmd, args, {encoding: 'utf8', cwd: ROOT });
 
 // This is hardly the browser fetch API, but it works for our primitive needs
-const fetch = url => new Promise((resolve, reject) => {
+const fetch = link => new Promise((resolve, reject) => {
   let buf = '';
-  const req = https.request(url, res => {
+  const req = https.request(link, res => {
     if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`));
     res.on('data', d => {
       buf += d;
@@ -29,8 +30,8 @@ const fetch = url => new Promise((resolve, reject) => {
   req.end();
 });
 
-const download = (url, dest) => new Promise((resolve, reject) => {
-  const req = https.request(url, res => {
+const download = (link, dest) => new Promise((resolve, reject) => {
+  const req = https.request(link, res => {
     if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`));
     resolve(pipeline(res, fs.createWriteStream(dest)));
   });
@@ -148,13 +149,13 @@ const install = async () => {
 
   const index = JSON.parse(await fetch(INDEX));
   const version = Object.keys(index)[+!ZIG_VERSION.dev];
-  const url = index[version][`${arch}-${platform}`].tarball;
+  const link = index[version][`${arch}-${platform}`].tarball;
 
-  let base = path.basename(url);
-  const archive = `${dir}/${path.basename(url)}`;
+  let base = path.basename(link);
+  const archive = `${dir}/${path.basename(link)}`;
 
-  console.log(`Downloading Zig tarball from ${url} to ${archive}`);
-  await download(url, archive);
+  console.log(`Downloading Zig tarball from ${link} to ${archive}`);
+  await download(link, archive);
 
   console.log(`Extracting tarball and installing to ${dir}`);
   await unpack(archive, dir);
@@ -192,11 +193,11 @@ const headers = async () => {
     if (err.code !== 'EEXIST') throw err;
   }
 
-  const url = process.release.headersUrl;
-  const targz = `${dir}/${path.basename(url)}`;
+  const link = process.release.headersUrl;
+  const targz = `${dir}/${path.basename(link)}`;
 
-  console.log(`Downloading Node headers from ${url} to ${targz}`);
-  await download(url, targz);
+  console.log(`Downloading Node headers from ${link} to ${targz}`);
+  await download(link, targz);
   await unpack(targz, dir);
 
   const dest = `${dir}/node-${process.version}/include/node`;
@@ -221,11 +222,11 @@ const lib = async() => {
     if (err.code !== 'EEXIST') throw err;
   }
 
-  const url = path.join(process.release.headersUrl, '../win-x64/node.lib');
-  const dest = `${dir}/${path.basename(url)}`;
+  const link = url.resolve(process.release.headersUrl, './win-x64/node.lib');
+  const dest = `${dir}/${path.basename(link)}`;
 
-  console.log(`Downloading Node import library from ${url} to ${dest}`);
-  await download(url, dest);
+  console.log(`Downloading Node import library from ${link} to ${dest}`);
+  await download(link, dest);
   console.log('Node import library:', dest);
 
   return dest;
