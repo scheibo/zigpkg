@@ -50,7 +50,6 @@ pub fn build(b: *std.Build) !void {
         node_lib.setMainPkgPath("./");
         node_lib.addSystemIncludePath(headers);
         node_lib.linkLibC();
-
         if (node_import_lib) |il| {
             node_lib.addObjectFile(il);
         } else if ((try NativeTargetInfo.detect(target)).target.os.tag == .windows) {

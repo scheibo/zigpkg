@@ -17,9 +17,10 @@
 # would otherwise just be the major version.
 #
 # Possibly due to some Zig or MinGW issue we need to also need to link against
-# 'C:/Windows/System32/ntdll.dll' (which can't be statically linked to). Some documentation suggests
-# that GCC requires the static library to be named libzigpkg.a instead of zigpkg.lib, but the latter
-# seems to work fine.
+# 'C:/Windows/System32/ntdll.dll' (which can't be statically linked to?) - when compiling the C code
+# with the Zig toolchain this will get automatically linked. Some documentation suggests that GCC
+# requires the static library to be named libzigpkg.a instead of zigpkg.lib, but the latter seems to
+# work fine.
 
 ROOT=../../../build
 CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
