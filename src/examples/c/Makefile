@@ -60,7 +60,10 @@ endif
 
 example: example.o
 ifeq ($(OS),Windows_NT)
-	cp ../../../build/lib/zigpkg$(suffix).{lib,dll} .
+	cp $(ROOT)/lib/zigpkg$(suffix).lib .
+ifeq ($(dynamic),true)
+	cp $(ROOT)/lib/zigpkg$(suffix).dll .
+endif
 endif
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
