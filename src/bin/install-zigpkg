@@ -185,7 +185,14 @@ const headers = async () => {
   } else {
     console.log(`Could not find node headers at ${include}, downloading...`);
   }
+
   const dir = path.join(ROOT, 'build', 'include');
+  const dest = `${dir}/node-${process.version}/include/node`;
+  if (fs.existsSync(path.join(dest, 'node.h'))) {
+    console.log('Node headers:', dest);
+    return dest;
+  }
+
   try {
     fs.mkdirSync(dir, {recursive: true});
   } catch (err) {
@@ -199,13 +206,12 @@ const headers = async () => {
   await download(url, targz);
   await unpack(targz, dir);
 
-  const dest = `${dir}/node-${process.version}/include/node`;
   console.log('Node headers:', dest);
 
   return dest;
 };
 
-const lib = async() => {
+const lib = async () => {
   const library = path.resolve(process.execPath, '../node.lib');
   if (fs.existsSync(path.join(library, 'node.h'))) {
     console.log('Node import library:', library);
@@ -215,14 +221,18 @@ const lib = async() => {
   }
 
   const dir = path.join(ROOT, 'build', 'lib');
+  const url = new URL('./win-x64/node.lib', process.release.headersUrl).href;
+  const dest = `${dir}/${path.basename(url)}`;
+  if (fs.existsSync(path.join(dest))) {
+    console.log('Node import library:', dest);
+    return dest;
+  }
+
   try {
     fs.mkdirSync(dir, {recursive: true});
   } catch (err) {
     if (err.code !== 'EEXIST') throw err;
   }
-
-  const url = new URL('./win-x64/node.lib', process.release.headersUrl).href;
-  const dest = `${dir}/${path.basename(url)}`;
 
   console.log(`Downloading Node import library from ${url} to ${dest}`);
   await download(url, dest);
@@ -235,10 +245,21 @@ const lib = async() => {
   const zig = await install();
   if (process.argv[2] === '--zig') process.exit(0);
 
+  // TODO: load addons and determine which configurations required to rebuild, default to all
+  const addons = [];
+  const libs = path.join(ROOT, 'build', 'lib');
+  if (fs.existsSync(libs)) {
+    for (const addon of fs.readdirSync(libs)) {
+      if (addon.endsWith('.wasm') || addon.endsWith('.node')) addons.push(addon);
+    }
+  }
+
   const args = ['build', '-Doptimize=ReleaseFast', '-Dstrip'];
+  // TODO: if (node) check to determine whether we need to download these
   args.push(`-Dnode-headers=${await headers()}`);
   if (process.platform === 'win32') args.push(`-Dnode-import-library=${await lib()}`);
 
+  // TODO: loop through addons and rebuild
   console.log('Building build/lib/zigpkg.node');
   sh(zig, args);
   console.log('Building build/lib/zigpkg-foo.node');
