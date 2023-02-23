@@ -235,12 +235,14 @@ const lib = async() => {
   const zig = await install();
   if (process.argv[2] === '--zig') process.exit(0);
 
-  const args = ['build', '-Dfoo', '-Doptimize=ReleaseFast', '-Dstrip'];
+  const args = ['build', '-Doptimize=ReleaseFast', '-Dstrip'];
   args.push(`-Dnode-headers=${await headers()}`);
   if (process.platform === 'win32') args.push(`-Dnode-import-library=${await lib()}`);
 
-  console.log('Building build/lib/zigpkg-foo.node');
+  console.log('Building build/lib/zigpkg.node');
   sh(zig, args);
+  console.log('Building build/lib/zigpkg-foo.node');
+  sh(zig, [...args, '-Dfoo']);
 })().catch(e => {
   console.error(e);
   process.exit(1);

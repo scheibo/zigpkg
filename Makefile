@@ -89,11 +89,11 @@ c-example:
 	./src/examples/c/example 40
 
 src/examples/js/node_modules:
-	npm -C src/examples/js install
+	npm -C src/examples/js install --install-links=false
 
 .PHONY: js-example
 js-example: src/examples/js/node_modules
-	npm -C src/examples/js start -- 40
+	npm -C src/examples/js start -- 40 $(if $(findstring foo,$(options)),-foo,)
 
 .PHONY: zig-example
 zig-example:
