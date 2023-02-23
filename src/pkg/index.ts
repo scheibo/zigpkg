@@ -1,8 +1,9 @@
 let NATIVE: undefined | {add?(n: number): number; addFoo?(n: number): number} = undefined;
 
+const SRC = /src[/\\]pkg$/;
 const tryRequire = (path: string) => {
   try {
-    return require(__dirname.endsWith('src/pkg') ? `../../build/${path}` : `../${path}`);
+    return require(SRC.test(__dirname) ? `../../build/${path}` : `../${path}`);
   } catch {
     return undefined;
   }
