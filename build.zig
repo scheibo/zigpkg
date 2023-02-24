@@ -99,8 +99,7 @@ pub fn build(b: *std.Build) !void {
             "zigpkg.h",
         );
         b.getInstallStep().dependOn(&header.step);
-    }
-    {
+
         const pc = b.fmt("lib{s}.pc", .{lib});
         const file = try b.cache_root.join(b.allocator, &.{pc});
         const pkgconfig_file = try std.fs.cwd().createFile(file, .{});
