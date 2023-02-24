@@ -240,13 +240,13 @@ const downloadImportLib = async () => {
 };
 
 (async () => {
-  // const options = (process.argv[2] || '').startsWith('--options=')
-  //   ? process.argv[2].slice(10).split(' ') : undefined;
-  // if (process.argv.length > 3 ||
-  //   process.argv.length === 3 && !(process.argv[2] === '--zig' || options)) {
-  //   console.error('Invalid arguments');
-  //   process.exit(1);
-  // }
+  const options = (process.argv[2] || '').startsWith('--options=')
+    ? process.argv[2].slice(10).split(' ') : undefined;
+  if (process.argv.length > 3 ||
+    process.argv.length === 3 && !(process.argv[2] === '--zig' || options)) {
+    console.error('Invalid arguments');
+    process.exit(1);
+  }
 
   const zig = await install();
   if (process.argv[2] === '--zig') process.exit(0);
@@ -254,39 +254,39 @@ const downloadImportLib = async () => {
   // Determine which configurations to build based on prior runs (see below for if there were no
   // previous runs) - try to build the same configurations as before (unless --options overridden).
   // We also track whether any of the configurations require Node headers/import libraries
-  // let node = false;
-  // const configs = new Map();
-  // const libs = path.join(ROOT, 'build', 'lib');
-  // if (fs.existsSync(libs)) {
-  //   for (const file of fs.readdirSync(libs)) {
-  //     const opts = options || [];
-  //     const type = path.extname(file).slice(1);
-  //     if (type === 'node') {
-  //       node = true;
-  //       if (!options) {
-  //         const addon = require(path.join(libs, file));
-  //         if (addon.options.foo) opts.push('-Dfoo');
-  //         if (addon.options.bar) opts.push('-Dbar');
-  //       }
-  //     } else if (type === 'wasm') {
-  //       // TODO: load wasm
-  //     } else {
-  //       continue;
-  //     }
-  //     const key = `${type} ${opts.sort().join(' ')}`;
-  //     if (!configs.has(key)) configs.set(key, {type, options: opts});
-  //   }
-  // }
+  let node = false;
+  const configs = new Map();
+  const libs = path.join(ROOT, 'build', 'lib');
+  if (fs.existsSync(libs)) {
+    for (const file of fs.readdirSync(libs)) {
+      const opts = options || [];
+      const type = path.extname(file).slice(1);
+      if (type === 'node') {
+        node = true;
+        if (!options) {
+          // const addon = require(path.join(libs, file));
+          // if (addon.options.foo) opts.push('-Dfoo');
+          // if (addon.options.bar) opts.push('-Dbar');
+        }
+      } else if (type === 'wasm') {
+        // TODO: load wasm
+      } else {
+        continue;
+      }
+      const key = `${type} ${opts.sort().join(' ')}`;
+      if (!configs.has(key)) configs.set(key, {type, options: opts});
+    }
+  }
 
   // If there haven't been any builds, build both a Node and WASM extension with either the default
   // options or whatever was passed in
-  // if (!configs.size) {
-  //   node = true;
-  //   configs.set('node', {type: 'node', options: options || ['-Dfoo']});
-  //   configs.set('wasm', {type: 'wasm', options: options || ['-Dfoo']});
-  // }
+  if (!configs.size) {
+    node = true;
+    configs.set('node', {type: 'node', options: options || ['-Dfoo']});
+    configs.set('wasm', {type: 'wasm', options: options || ['-Dfoo']});
+  }
 
-  const node = true; // DEBUG
+  node = true;
 
   const headers = node ? await downloadHeaders() : undefined;
   const lib = node && process.platform === 'win32' ? await downloadImportLib() : undefined;

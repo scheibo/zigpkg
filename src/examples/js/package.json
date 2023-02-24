@@ -2,6 +2,9 @@
   "dependencies": {
     "zigpkg": "file:../../.."
   },
+  "devDependencies": {
+    "parcel": "^2.4.1"
+  },
   "scripts": {
     "start": "node example.js",
     "start:web": "parcel index.html"
