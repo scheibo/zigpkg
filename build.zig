@@ -23,6 +23,7 @@ pub fn build(b: *std.Build) !void {
 
     const foo = b.option(bool, "foo", "Enable foo") orelse false;
     const bar = b.option(bool, "bar", "Enable bar") orelse false;
+    const wasm = b.option(bool, "wasm", "Build a WASM library") orelse false;
     const dynamic = b.option(bool, "dynamic", "Build a dynamic library") orelse false;
     const strip = b.option(bool, "strip", "Strip debugging symbols from binary") orelse false;
     const pic = b.option(bool, "pic", "Force position independent code") orelse false;
@@ -62,6 +63,22 @@ pub fn build(b: *std.Build) !void {
         if (pic) node_lib.force_pic = pic;
         node_lib.emit_bin = .{ .emit_to = out };
         b.getInstallStep().dependOn(&node_lib.step);
+    } else if (wasm) {
+        const wasm_lib = b.addSharedLibrary(.{
+            .name = lib,
+            .root_source_file = .{ .path = "src/lib/binding/wasm.zig" },
+            .optimize = switch (optimize) {
+                .ReleaseFast, .ReleaseSafe => .ReleaseSmall,
+                else => optimize,
+            },
+            .target = .{ .cpu_arch = .wasm32, .os_tag = .freestanding },
+        });
+        wasm_lib.addOptions("build_options", options);
+        wasm_lib.setMainPkgPath("./");
+        wasm_lib.rdynamic = true;
+        wasm_lib.strip = strip;
+        if (pic) wasm_lib.force_pic = pic;
+        wasm_lib.install();
     } else if (dynamic) {
         const dynamic_lib = b.addSharedLibrary(.{
             .name = lib,
@@ -92,7 +109,7 @@ pub fn build(b: *std.Build) !void {
         static_lib.install();
     }
 
-    if (node_headers == null) {
+    if (node_headers == null or wasm) {
         const header = b.addInstallFileWithDir(
             .{ .path = "src/include/zigpkg.h" },
             .header,
