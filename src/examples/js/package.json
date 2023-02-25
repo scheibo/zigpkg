@@ -3,10 +3,12 @@
     "zigpkg": "file:../../.."
   },
   "devDependencies": {
-    "parcel": "^2.4.1"
+    "parcel": "^2.4.1",
+    "vite": "^4.1.4"
   },
   "scripts": {
     "start": "node example.js",
-    "start:web": "parcel index.html"
+    "start:parcel": "parcel index.html",
+    "start:vite": "TODO"
   }
 }

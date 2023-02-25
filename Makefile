@@ -104,7 +104,6 @@ example: c-example js-example zig-example
 
 .PHONY: integration
 integration: build check example
-# TODO: npm run test:integration
 
 .PHONY: benchmark
 benchmark:

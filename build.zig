@@ -15,6 +15,16 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const node_headers = b.option([]const u8, "node-headers", "Path to node headers");
+    const node_import_lib =
+        b.option([]const u8, "node-import-library", "Path to node import library (Windows)");
+    const wasm = b.option(bool, "wasm", "Build a WASM library") orelse false;
+    const dynamic = b.option(bool, "dynamic", "Build a dynamic library") orelse false;
+    const strip = b.option(bool, "strip", "Strip debugging symbols from binary") orelse false;
+    const pic = b.option(bool, "pic", "Force position independent code") orelse false;
+
+    const cmd = b.findProgram(&[_][]const u8{"strip"}, &[_][]const u8{}) catch null;
+
     var parser = std.json.Parser.init(b.allocator, false);
     defer parser.deinit();
     var tree = try parser.parse(@embedFile("package.json"));
@@ -26,49 +36,43 @@ pub fn build(b: *std.Build) !void {
 
     const foo = b.option(bool, "foo", "Enable foo") orelse false;
     const bar = b.option(bool, "bar", "Enable bar") orelse false;
-    const wasm = b.option(bool, "wasm", "Build a WASM library") orelse false;
-    const dynamic = b.option(bool, "dynamic", "Build a dynamic library") orelse false;
-    const strip = b.option(bool, "strip", "Strip debugging symbols from binary") orelse false;
-    const pic = b.option(bool, "pic", "Force position independent code") orelse false;
-
-    const cmd = b.findProgram(&[_][]const u8{"strip"}, &[_][]const u8{}) catch null;
 
     const options = b.addOptions();
     options.addOption(bool, "foo", foo);
     options.addOption(bool, "bar", bar);
 
-    const lib = if (foo) "zigpkg-foo" else "zigpkg";
+    const name = if (foo) "zigpkg-foo" else "zigpkg";
 
-    const node_headers = b.option([]const u8, "node-headers", "Path to node headers");
-    const node_import_lib =
-        b.option([]const u8, "node-import-library", "Path to node import library (Windows)");
+    var c = false;
     if (node_headers) |headers| {
-        const name = b.fmt("{s}.node", .{lib});
-        const node_lib = b.addSharedLibrary(.{
-            .name = name,
+        const addon = b.fmt("{s}.node", .{name});
+        const lib = b.addSharedLibrary(.{
+            .name = addon,
             .root_source_file = .{ .path = "src/lib/binding/node.zig" },
             .optimize = optimize,
             .target = target,
         });
-        node_lib.addOptions("build_options", options);
-        node_lib.setMainPkgPath("./");
-        node_lib.addSystemIncludePath(headers);
-        node_lib.linkLibC();
+        lib.addOptions("build_options", options);
+        lib.setMainPkgPath("./");
+        lib.addSystemIncludePath(headers);
+        lib.linkLibC();
         if (node_import_lib) |il| {
-            node_lib.addObjectFile(il);
+            lib.addObjectFile(il);
         } else if ((try NativeTargetInfo.detect(target)).target.os.tag == .windows) {
             std.debug.print("Must provide --node-import-library path on Windows", .{});
             std.process.exit(1);
         }
-        node_lib.linker_allow_shlib_undefined = true;
-        const out = b.fmt("build/lib/{s}", .{name});
-        maybeStrip(b, node_lib, b.getInstallStep(), strip, cmd, out);
-        if (pic) node_lib.force_pic = pic;
-        node_lib.emit_bin = .{ .emit_to = out };
-        b.getInstallStep().dependOn(&node_lib.step);
+        lib.linker_allow_shlib_undefined = true;
+        const out = b.fmt("build/lib/{s}", .{addon});
+        maybeStrip(b, lib, b.getInstallStep(), strip, cmd, out);
+        if (pic) lib.force_pic = pic;
+        // Always emit to build/lib because this is where the driver code expects to find it
+        // TODO: switch to whatever ziglang/zig/issues#2231 comes up with
+        lib.emit_bin = .{ .emit_to = out };
+        b.getInstallStep().dependOn(&lib.step);
     } else if (wasm) {
-        const wasm_lib = b.addSharedLibrary(.{
-            .name = lib,
+        const lib = b.addSharedLibrary(.{
+            .name = name,
             .root_source_file = .{ .path = "src/lib/binding/wasm.zig" },
             .optimize = switch (optimize) {
                 .ReleaseFast, .ReleaseSafe => .ReleaseSmall,
@@ -76,43 +80,45 @@ pub fn build(b: *std.Build) !void {
             },
             .target = .{ .cpu_arch = .wasm32, .os_tag = .freestanding },
         });
-        wasm_lib.addOptions("build_options", options);
-        wasm_lib.setMainPkgPath("./");
-        wasm_lib.rdynamic = true;
-        wasm_lib.strip = strip;
-        if (pic) wasm_lib.force_pic = pic;
-        wasm_lib.install();
+        lib.addOptions("build_options", options);
+        lib.setMainPkgPath("./");
+        lib.rdynamic = true;
+        lib.strip = strip;
+        if (pic) lib.force_pic = pic;
+        lib.install();
     } else if (dynamic) {
-        const dynamic_lib = b.addSharedLibrary(.{
-            .name = lib,
+        const lib = b.addSharedLibrary(.{
+            .name = name,
             .root_source_file = .{ .path = "src/lib/binding/c.zig" },
             .version = try std.builtin.Version.parse(version),
             .optimize = optimize,
             .target = target,
         });
-        dynamic_lib.addOptions("build_options", options);
-        dynamic_lib.setMainPkgPath("./");
-        dynamic_lib.addIncludePath("src/include");
-        maybeStrip(b, dynamic_lib, b.getInstallStep(), strip, cmd, null);
-        if (pic) dynamic_lib.force_pic = pic;
-        dynamic_lib.install();
+        lib.addOptions("build_options", options);
+        lib.setMainPkgPath("./");
+        lib.addIncludePath("src/include");
+        maybeStrip(b, lib, b.getInstallStep(), strip, cmd, null);
+        if (pic) lib.force_pic = pic;
+        lib.install();
+        c = true;
     } else {
-        const static_lib = b.addStaticLibrary(.{
-            .name = lib,
+        const lib = b.addStaticLibrary(.{
+            .name = name,
             .root_source_file = .{ .path = "src/lib/binding/c.zig" },
             .optimize = optimize,
             .target = target,
         });
-        static_lib.addOptions("build_options", options);
-        static_lib.setMainPkgPath("./");
-        static_lib.addIncludePath("src/include");
-        static_lib.bundle_compiler_rt = true;
-        maybeStrip(b, static_lib, b.getInstallStep(), strip, cmd, null);
-        if (pic) static_lib.force_pic = pic;
-        static_lib.install();
+        lib.addOptions("build_options", options);
+        lib.setMainPkgPath("./");
+        lib.addIncludePath("src/include");
+        lib.bundle_compiler_rt = true;
+        maybeStrip(b, lib, b.getInstallStep(), strip, cmd, null);
+        if (pic) lib.force_pic = pic;
+        lib.install();
+        c = true;
     }
 
-    if (node_headers == null or wasm) {
+    if (c) {
         const header = b.addInstallFileWithDir(
             .{ .path = "src/include/zigpkg.h" },
             .header,
@@ -120,7 +126,7 @@ pub fn build(b: *std.Build) !void {
         );
         b.getInstallStep().dependOn(&header.step);
 
-        const pc = b.fmt("lib{s}.pc", .{lib});
+        const pc = b.fmt("lib{s}.pc", .{name});
         const file = try b.cache_root.join(b.allocator, &.{pc});
         const pkgconfig_file = try std.fs.cwd().createFile(file, .{});
 
@@ -137,7 +143,7 @@ pub fn build(b: *std.Build) !void {
             \\Version: {5s}
             \\Cflags: -I${{includedir}}
             \\Libs: -L${{libdir}} -l{2s}
-        , .{ dirname, b.install_path, lib, repository.next().?, description, version });
+        , .{ dirname, b.install_path, name, repository.next().?, description, version });
         defer pkgconfig_file.close();
 
         b.installFile(file, b.fmt("share/pkgconfig/{s}", .{pc}));
