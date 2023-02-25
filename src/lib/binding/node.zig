@@ -108,13 +108,8 @@ const Number = struct {
                         }
                     },
                 },
-                33...51 => {
+                33...52 => {
                     if (c.napi_create_int64(env, @as(i64, value), &result) != c.napi_ok) {
-                        return Error.throw(env, "Failed to create int64 " ++ name);
-                    }
-                },
-                52 => {
-                    if (c.napi_create_int64(env, @as(i64, @as(i52, value)), &result) != c.napi_ok) {
                         return Error.throw(env, "Failed to create int64 " ++ name);
                     }
                 },
@@ -126,7 +121,7 @@ const Number = struct {
                         return Error.throw(env, "Failed to create int32 " ++ name);
                     }
                 } else if (value >= std.math.minInt(i52) and value <= std.math.maxInt(i52)) {
-                    if (c.napi_create_int64(env, @as(i64, @as(i52, value)), &result) != c.napi_ok) {
+                    if (c.napi_create_int64(env, @as(i64, value), &result) != c.napi_ok) {
                         return Error.throw(env, "Failed to create int64 " ++ name);
                     }
                 } else {
