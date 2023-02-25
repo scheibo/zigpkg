@@ -1,9 +1,13 @@
-let NATIVE: undefined | {add?(n: number): number; addFoo?(n: number): number} = undefined;
+let NATIVE: undefined | {
+  add?(this: void, n: number): number;
+  addFoo?(this: void, n: number): number
+} = undefined;
 
 const SRC = /src[/\\]pkg$/;
 const tryRequire = (path: string) => {
   try {
-    return require(SRC.test(__dirname) ? `../../build/${path}` : `../${path}`);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require(SRC.test(__dirname) ? `../../build/${path}` : `../${path}`) as typeof NATIVE;
   } catch {
     return undefined;
   }
