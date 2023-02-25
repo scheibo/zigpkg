@@ -53,15 +53,19 @@ const Property = union(enum) {
             .name = null,
             .method = switch (property) {
                 .method => |m| m,
-                else => null,
+                .value => null,
             },
             .getter = null,
             .setter = null,
             .value = switch (property) {
+                .method => null,
                 .value => |v| v,
-                else => null,
+
             },
-            .attributes = c.napi_default,
+            .attributes = switch (property) {
+                .method => c.napi_default,
+                .value => c.napi_enumerable,
+            },
             .data = null,
         };
     }
