@@ -9,7 +9,7 @@ const c = @cImport({
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
     const opts = options(env, "options") catch return null;
     const properties = [_]c.napi_property_descriptor{
-        Property.init("add", .{ .method = add }),
+        Property.init("compute", .{ .method = compute }),
         Property.init("options", .{ .value = opts }),
     };
     if (c.napi_define_properties(env, exports, properties.len, &properties) != c.napi_ok) {
@@ -18,24 +18,29 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     return exports;
 }
 
-fn add(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+fn compute(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     var argc: usize = 1;
     var argv: [1]c.napi_value = undefined;
     if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
         Error.throw(env, "Failed to get args") catch return null;
     }
-    if (argc != 1) TypeError.throw(env, "add requires exactly 1 argument") catch return null;
-    const n = Number.get(env, argv[0], "n", u8) catch return null;
-    return Number.init(env, zigpkg.add(n), "result") catch return null;
+    if (argc != 1) TypeError.throw(env, "compute requires exactly 1 argument") catch return null;
+    const n = Number.get(env, argv[0], "n", u32) catch return null;
+    const result = zigpkg.compute(n) catch |err| switch (err) {
+        error.Overflow => return Error.throw(env, "Result overflowed") catch return null,
+    };
+    return Number.init(env, result, "result") catch return null;
 }
 
 fn options(env: c.napi_env, comptime name: [:0]const u8) !c.napi_value {
     var object = try Object.init(env, name);
     const properties = [_]c.napi_property_descriptor{
-        Property.init("foo", .{ .value = try Boolean.init(env, zigpkg.options.foo, "foo") }),
-        Property.init("bar", .{ .value = try Boolean.init(env, zigpkg.options.bar, "bar") }),
-        Property.init("baz", .{ .value = try Boolean.init(env, zigpkg.options.baz, "baz") }),
-        Property.init("qux", .{ .value = try Boolean.init(env, zigpkg.options.qux, "qux") }),
+        Property.init("add", .{
+            .value = try Boolean.init(env, zigpkg.options.add, "add"),
+        }),
+        Property.init("subtract", .{
+            .value = try Boolean.init(env, zigpkg.options.subtract, "subtract"),
+        }),
     };
     if (c.napi_define_properties(env, object, properties.len, &properties) != c.napi_ok) {
         return Error.throw(env, "Failed to set fields of " ++ name);

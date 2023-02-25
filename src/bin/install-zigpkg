@@ -279,8 +279,8 @@ const downloadImportLib = async () => {
         node = true;
         if (!options) {
           const addon = require(copy);
-          if (addon.options.foo) opts.push('-Dfoo');
-          if (addon.options.bar) opts.push('-Dbar');
+          if (addon.options.foo) opts.push('-Dadd');
+          if (addon.options.bar) opts.push('-Dsubtract');
         }
       } else if (type === 'wasm') {
         // TODO: load wasm
@@ -296,8 +296,8 @@ const downloadImportLib = async () => {
   // either the default options or whatever was passed in
   if (!configs.size) {
     node = true;
-    configs.set('node', {type: 'node', options: options || ['-Dfoo']});
-    configs.set('wasm', {type: 'wasm', options: options || ['-Dfoo']});
+    configs.set('node', {type: 'node', options: options || ['-Dadd']});
+    configs.set('wasm', {type: 'wasm', options: options || ['-Dadd']});
   }
 
   const headers = node ? await downloadHeaders() : undefined;
@@ -311,9 +311,8 @@ const downloadImportLib = async () => {
     } else {
       args.push('-Dwasm');
     }
-    const suffix = opts.includes('-Dfoo') || opts.includes('-Dfoo=true') ? '-foo' : '';
     const flags = opts.length ? ` (${opts.join(' ')})` : '';
-    const artifact = path.join('build', 'lib', `zigpkg${suffix}.${config.type}${flags}`);
+    const artifact = path.join('build', 'lib', `zigpkg.${config.type}${flags}`);
     console.log(`Building ${artifact}`);
     sh(zig, args);
   }

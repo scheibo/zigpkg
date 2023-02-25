@@ -10,15 +10,14 @@ extern "C" {
 
 /** Compile time options set when libzigpkg was built. */
 typedef struct zigpkg_options {
-    bool foo;
-    bool bar;
-    bool baz;
-    bool qux;
+    bool add;
+    bool subtract;
 } zigpkg_options;
 extern const zigpkg_options ZIGPKG_OPTIONS;
 
-/** Adds to n and returns the result. */
-uint8_t zigpkg_add(uint8_t n);
+/** Computes the new value of n, returning whether or not the computation was successful. */
+__attribute__((__nonnull__))
+bool zigpkg_compute(uint32_t* n);
 
 #ifdef __cplusplus
 }

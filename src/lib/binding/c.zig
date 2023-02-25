@@ -1,12 +1,11 @@
 const zigpkg = @import("../zigpkg.zig");
 
 export const ZIGPKG_OPTIONS: zigpkg.Options = .{
-    .foo = zigpkg.options.foo,
-    .bar = zigpkg.options.bar,
-    .baz = zigpkg.options.baz,
-    .qux = zigpkg.options.qux,
+    .add = zigpkg.options.add,
+    .subtract = zigpkg.options.subtract,
 };
 
-export fn zigpkg_add(n: u8) u8 {
-    return zigpkg.add(n);
+export fn zigpkg_compute(n: *u32) bool {
+    n.* = zigpkg.compute(n.*) catch return false;
+    return true;
 }

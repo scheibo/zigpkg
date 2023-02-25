@@ -34,14 +34,14 @@ pub fn build(b: *std.Build) !void {
     var repository = std.mem.split(u8, tree.root.Object.get("repository").?.String, ":");
     std.debug.assert(std.mem.eql(u8, repository.first(), "github"));
 
-    const foo = b.option(bool, "foo", "Enable foo") orelse false;
-    const bar = b.option(bool, "bar", "Enable bar") orelse false;
+    const add = b.option(bool, "add", "Enable add") orelse false;
+    const subtract = b.option(bool, "subtract", "Enable subtract") orelse false;
 
     const options = b.addOptions();
-    options.addOption(bool, "foo", foo);
-    options.addOption(bool, "bar", bar);
+    options.addOption(bool, "add", add);
+    options.addOption(bool, "subtract", subtract);
 
-    const name = if (foo) "zigpkg-foo" else "zigpkg";
+    const name = "zigpkg";
 
     var c = false;
     if (node_headers) |headers| {

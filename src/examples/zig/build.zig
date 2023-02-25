@@ -5,12 +5,12 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const foo = b.option(bool, "foo", "Enable foo") orelse false;
-    const bar = b.option(bool, "bar", "Enable bar") orelse false;
+    const add = b.option(bool, "add", "Enable addition") orelse false;
+    const subtract = b.option(bool, "subtract", "Enable subtraction") orelse false;
 
     const options = b.addOptions();
-    options.addOption(bool, "foo", foo);
-    options.addOption(bool, "bar", bar);
+    options.addOption(bool, "add", add);
+    options.addOption(bool, "subtract", subtract);
 
     const exe = b.addExecutable(.{
         .name = "example",

@@ -63,7 +63,11 @@
         "plugin:@typescript-eslint/eslint-recommended",
         "plugin:@typescript-eslint/recommended",
         "plugin:@typescript-eslint/recommended-requiring-type-checking"
-      ]
+      ],
+      "rules": {
+        "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/no-non-null-assertion": "off"
+      }
     }, {
       "files": ["**/*.test.ts"],
       "extends": ["plugin:jest/recommended", "plugin:jest/style"],

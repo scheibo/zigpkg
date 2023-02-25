@@ -1,5 +1,3 @@
 const zigpkg = require('zigpkg');
 
-zigpkg.initialize();
-
-console.log(zigpkg.add(+process.argv[2], !!process.argv[3]));
+console.log(zigpkg.compute(+process.argv[2]));

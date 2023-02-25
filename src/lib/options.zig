@@ -2,16 +2,12 @@ const build_options = @import("build_options");
 const root = @import("root");
 
 pub const Options = extern struct {
-    foo: bool = false,
-    bar: bool = false,
-    baz: bool = true,
-    qux: bool = true,
+    add: bool,
+    subtract: bool,
 };
 
-pub const foo = get("foo", false);
-pub const bar = get("bar", false);
-pub const baz = get("baz", true);
-pub const qux = get("qux", true);
+pub const add = get("add", false);
+pub const subtract = get("subtract", false);
 
 fn get(comptime name: []const u8, default: bool) bool {
     var build_enable: ?bool = null;
