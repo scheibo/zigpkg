@@ -1,44 +1,81 @@
 name: Tests
 on:
+  # Because Zig master is always updating, running nightly with the latest Zig
+  # build helps us identify errors due to breaking changes. If we pin our Zig
+  # version to a stable release then this scheduled run is unnecessary.
   schedule:
     - cron: '0 2 * * *'
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
 jobs:
   test:
     strategy:
+      # Keep running all of the builds even if one fails so that we're aware
+      # of every issue that might need to be fixed
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         options: ['', '-Dfoo', '-Dbar', '-Dfoo -Dbar']
+        # Generally we should pin our version to something stable and add all
+        # major support here as well as run against master if possible
         zig: [local] # master
     runs-on: ${{matrix.os}}
     steps:
+      # The scheduled canary run of this workflow should only run against master
+      # as simply running our code against known Zig versions won't add anything
       # - run: exit 0
       #   if: ${{ github.event_name == 'schedule' && matrix.zig != 'master' }}
       - uses: actions/checkout@v3
+
+      # The Zig example in this repoistory currently relies on a symlink hack
+      # and to work on Windows we need to run this.
+      # TODO: remove this once ziglang/zig/issues#14339 lands
       - run: git config core.symlinks true
+
+      # For testing that things work when the user already installed Zig
       # NOTE: we rely on npm postinstall-ed zig for local zig
       # - uses: goto-bus-stop/setup-zig@v2
       #   if: ${{ matrix.zig != 'local' }}
       #   with:
       #     version: ${{matrix.zig}}
+
+      # Install our dependencies for Node and run install-zigpkg which will
+      # possibly download Zig and which builds our Node/WASM extensions
       - run: npm install
+
+      # If we're using the version of Zig installed via install-zigpkg we
+      # need to place it on our path (which sadly is different on Windows)
       - run: echo "${GITHUB_WORKSPACE}/build/bin/zig" >> $GITHUB_PATH
         if: ${{ matrix.zig == 'local' && matrix.os != 'windows-latest' }}
       - run: echo "${env:GITHUB_WORKSPACE}/build/bin/zig" >> $env:GITHUB_PATH
         if: ${{ matrix.zig == 'local' && matrix.os == 'windows-latest' }}
+
+      # Run tests both in our default optimization mode (Default) and our preferred
+      # optimization mode (ReleaseFast, though some projects will want ReleaseSafe)
       - run: zig build test ${{matrix.options}}
       - run: zig build test ${{matrix.options}} -Doptimize=ReleaseFast
+
+      # FIXME: remove
       - run: npm exec install-zigpkg -- --options=""
+
+      # With everything set up we can now run the TypeScript compiler/unit tests/linter
+      # `make lint` runs both eslint for the JavasScript code and the Zig formatter
       - run: npm run compile
       - run: npm test
       - run: make lint
+
+      # Build the static zigpkg library (the default) to the build directory so
+      # that the C example has something link against and run all our examples
       - run: zig build ${{matrix.options}} -p build
-      - run: make example options="${{matrix.options}}"
+      - run: make example options="${{matrix.options}}" # FIXME
+
+      # We want to run the C example again with a dynamic library, and so clean
+      # things up to ensure we have a hermetic environment. However, this potentially
+      # yeets our locally installed Zig compiler so we may need to reinstall it
       - run: make clean && npm exec install-zigpkg -- --zig
+
+      # Run the C example, this time linking to the dynamic library
       - run: zig build ${{matrix.options}} -p build -Ddynamic
-      - run: make c-example options="${{matrix.options}}" dynamic=true
+      - run: make c-example options="${{matrix.options}}" dynamic=true # FIXME
