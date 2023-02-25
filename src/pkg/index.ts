@@ -20,7 +20,7 @@ export function initialize() {
     addFoo: tryRequire('lib/zigpkg-foo.node')?.add,
   };
   if (!NATIVE.add && !NATIVE.addFoo) {
-    throw new Error('No native addons found - did you run install-zigpkg?');
+    throw new Error('No native addons found - did you run `npm exec install-zigpkg`?');
   }
 }
 

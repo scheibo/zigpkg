@@ -29,7 +29,7 @@
   },
   "scripts": {
     "lint": "eslint --cache src --ext ts,js && eslint src/bin/install-zigpkg",
-    "fix": "eslint --fix src --ext ts,js && eslint src/bin/install-zigpkg",
+    "fix": "eslint --fix src --ext ts,js && eslint --fix src/bin/install-zigpkg",
     "compile": "tsc -p .",
     "build": "npm run compile",
     "test": "jest",
