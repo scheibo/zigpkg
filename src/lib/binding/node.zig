@@ -60,7 +60,6 @@ const Property = union(enum) {
             .value = switch (property) {
                 .method => null,
                 .value => |v| v,
-
             },
             .attributes = switch (property) {
                 .method => c.napi_default,

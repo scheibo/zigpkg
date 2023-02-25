@@ -20,6 +20,9 @@ pub fn build(b: *std.Build) !void {
     var tree = try parser.parse(@embedFile("package.json"));
     defer tree.deinit();
     const version = tree.root.Object.get("version").?.String;
+    const description = tree.root.Object.get("description").?.String;
+    var repository = std.mem.split(u8, tree.root.Object.get("repository").?.String, ":");
+    std.debug.assert(std.mem.eql(u8, repository.first(), "github"));
 
     const foo = b.option(bool, "foo", "Enable foo") orelse false;
     const bar = b.option(bool, "bar", "Enable bar") orelse false;
@@ -122,7 +125,6 @@ pub fn build(b: *std.Build) !void {
         const pkgconfig_file = try std.fs.cwd().createFile(file, .{});
 
         const dirname = comptime std.fs.path.dirname(@src().file) orelse ".";
-        const suffix = if (foo) "-foo" else "";
         const writer = pkgconfig_file.writer();
         try writer.print(
             \\prefix={0s}/{1s}
@@ -130,12 +132,12 @@ pub fn build(b: *std.Build) !void {
             \\libdir=${{prefix}}/lib
             \\
             \\Name: lib{2s}
-            \\URL: https://github.com/scheibo/zigpkg
-            \\Description: zigpkg{3s} library
-            \\Version: {4s}
+            \\URL: https://github.com/{3s}
+            \\Description: {4s}
+            \\Version: {5s}
             \\Cflags: -I${{includedir}}
             \\Libs: -L${{libdir}} -l{2s}
-        , .{ dirname, b.install_path, lib, suffix, version });
+        , .{ dirname, b.install_path, lib, repository.next().?, description, version });
         defer pkgconfig_file.close();
 
         b.installFile(file, b.fmt("share/pkgconfig/{s}", .{pc}));
