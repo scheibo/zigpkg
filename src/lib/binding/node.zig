@@ -27,7 +27,7 @@ fn compute(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_valu
     if (argc != 1) TypeError.throw(env, "compute requires exactly 1 argument") catch return null;
     const n = Number.get(env, argv[0], "n", u32) catch return null;
     const result = zigpkg.compute(n) catch |err| switch (err) {
-        error.Overflow => return Error.throw(env, "Result overflowed") catch return null,
+        error.Overflow => return Error.throw(env, "Result overflow") catch return null,
     };
     return Number.init(env, result, "result") catch return null;
 }

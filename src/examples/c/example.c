@@ -21,7 +21,7 @@ int main(int argc, char **argv)
    }
 
    if (!zigpkg_compute((uint32_t *)&num)) {
-      fprintf(stderr, "Result overflowed\n");
+      fprintf(stderr, "Result overflow\n");
       return 1;
    }
 
