@@ -67,7 +67,7 @@ pub fn build(b: *std.Build) !void {
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd, out);
         if (pic) lib.force_pic = pic;
         // Always emit to build/lib because this is where the driver code expects to find it
-        // TODO: switch to whatever ziglang/zig/issues#2231 comes up with
+        // TODO: switch to whatever ziglang/zig#2231 comes up with
         lib.emit_bin = .{ .emit_to = out };
         b.getInstallStep().dependOn(&lib.step);
     } else if (wasm) {
