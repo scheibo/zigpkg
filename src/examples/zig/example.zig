@@ -1,6 +1,9 @@
 const std = @import("std");
 const zigpkg = @import("zigpkg");
 
+// In Zig the options may be set through a root declaration instead
+// pub const zigpkg_options = .{ .multiply = false };
+
 pub fn main() !void {
     // Set up required to be able to parse command line arguments
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);

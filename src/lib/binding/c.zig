@@ -1,6 +1,6 @@
 const zigpkg = @import("../zigpkg.zig");
 
-export const ZIGPKG_OPTIONS: zigpkg.Options = .{
+export const ZIGPKG_OPTIONS: extern struct { add: bool, subtract: bool } = .{
     .add = zigpkg.options.add,
     .subtract = zigpkg.options.subtract,
 };

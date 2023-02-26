@@ -3,11 +3,16 @@ const builtin = @import("builtin");
 
 const NativeTargetInfo = std.zig.system.NativeTargetInfo;
 
-pub fn module(b: *std.Build, build_options: *std.Build.Module) *std.Build.Module {
+pub const Options = struct { add: ?bool = null, subtract: ?bool = null };
+
+pub fn module(b: *std.Build, options: Options) *std.Build.Module {
     const dirname = comptime std.fs.path.dirname(@src().file) orelse ".";
+    const build_options = b.addOptions();
+    build_options.addOption(?bool, "add", options.add);
+    build_options.addOption(?bool, "subtract", options.subtract);
     return b.createModule(.{
         .source_file = .{ .path = dirname ++ "/src/lib/zigpkg.zig" },
-        .dependencies = &.{.{ .name = "build_options", .module = build_options }},
+        .dependencies = &.{.{ .name = "zigpkg_options", .module = build_options.createModule() }},
     });
 }
 
@@ -34,12 +39,12 @@ pub fn build(b: *std.Build) !void {
     var repository = std.mem.split(u8, tree.root.Object.get("repository").?.String, ":");
     std.debug.assert(std.mem.eql(u8, repository.first(), "github"));
 
-    const add = b.option(bool, "add", "Enable add") orelse false;
-    const subtract = b.option(bool, "subtract", "Enable subtract") orelse false;
+    const add = b.option(bool, "add", "Enable add");
+    const subtract = b.option(bool, "subtract", "Enable subtract");
 
     const options = b.addOptions();
-    options.addOption(bool, "add", add);
-    options.addOption(bool, "subtract", subtract);
+    options.addOption(?bool, "add", add);
+    options.addOption(?bool, "subtract", subtract);
 
     const name = "zigpkg";
 
@@ -52,7 +57,7 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
             .target = target,
         });
-        lib.addOptions("build_options", options);
+        lib.addOptions("zigpkg_options", options);
         lib.setMainPkgPath("./");
         lib.addSystemIncludePath(headers);
         lib.linkLibC();
@@ -80,7 +85,7 @@ pub fn build(b: *std.Build) !void {
             },
             .target = .{ .cpu_arch = .wasm32, .os_tag = .freestanding },
         });
-        lib.addOptions("build_options", options);
+        lib.addOptions("zigpkg_options", options);
         lib.setMainPkgPath("./");
         lib.rdynamic = true;
         lib.strip = strip;
@@ -106,7 +111,7 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
             .target = target,
         });
-        lib.addOptions("build_options", options);
+        lib.addOptions("zigpkg_options", options);
         lib.setMainPkgPath("./");
         lib.addIncludePath("src/include");
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd, null);
@@ -120,7 +125,7 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
             .target = target,
         });
-        lib.addOptions("build_options", options);
+        lib.addOptions("zigpkg_options", options);
         lib.setMainPkgPath("./");
         lib.addIncludePath("src/include");
         lib.bundle_compiler_rt = true;
@@ -177,7 +182,7 @@ pub fn build(b: *std.Build) !void {
     });
     tests.setMainPkgPath("./");
     tests.setFilter(test_filter);
-    tests.addOptions("build_options", options);
+    tests.addOptions("zigpkg_options", options);
     tests.single_threaded = true;
     maybeStrip(b, tests, &tests.step, strip, cmd, null);
     if (pic) tests.force_pic = pic;

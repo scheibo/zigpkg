@@ -5,12 +5,8 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const add = b.option(bool, "add", "Enable addition") orelse false;
-    const subtract = b.option(bool, "subtract", "Enable subtraction") orelse false;
-
-    const options = b.addOptions();
-    options.addOption(bool, "add", add);
-    options.addOption(bool, "subtract", subtract);
+    const add = b.option(bool, "add", "Enable addition");
+    const subtract = b.option(bool, "subtract", "Enable subtraction");
 
     const exe = b.addExecutable(.{
         .name = "example",
@@ -18,7 +14,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .target = target,
     });
-    exe.addModule("zigpkg", zigpkg.module(b, options.createModule()));
+    exe.addModule("zigpkg", zigpkg.module(b, .{ .add = add, .subtract = subtract }));
     exe.install();
 
     const run_cmd = exe.run();
