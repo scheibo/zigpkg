@@ -25,6 +25,6 @@ int main(int argc, char **argv)
       return 1;
    }
 
-   printf("%lu\n", num);
+   printf("%lu\n", (unsigned long)num);
    return 0;
 }
