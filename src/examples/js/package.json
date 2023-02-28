@@ -9,6 +9,6 @@
   "scripts": {
     "start": "node example.js",
     "start:parcel": "parcel index.html",
-    "start:vite": "TODO"
+    "start:vite": "vite"
   }
 }

@@ -1,3 +1,8 @@
 const zigpkg = require('zigpkg');
 
-console.log(zigpkg.compute(+process.argv[2]));
+zigpkg.initialize()
+  .then(() => console.log(zigpkg.compute(+process.argv[2] || 40)))
+  .catch(err => {
+    console.error(err);
+    process.exit(1);
+  });

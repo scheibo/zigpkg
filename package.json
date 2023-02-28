@@ -73,7 +73,8 @@
       "files": ["**/*.test.ts"],
       "extends": ["plugin:jest/recommended", "plugin:jest/style"],
       "plugins": ["jest"],
-      "env": {"jest/globals": true}
+      "env": {"jest/globals": true},
+      "rules": {"jest/valid-title": "off"}
     }]
   }
 }
