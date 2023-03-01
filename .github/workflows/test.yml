@@ -29,9 +29,9 @@ jobs:
       #   if: ${{ github.event_name == 'schedule' && matrix.zig != 'master' }}
       - uses: actions/checkout@v3
 
-      # The Zig example in this repoistory currently relies on a symlink hack
+      # The Zig example in this repository currently relies on a symlink hack
       # and to work on Windows we need to run this.
-      # TODO: remove this once ziglang/zig/issues#14339 lands
+      # TODO: remove this once ziglang/zig#14339 lands
       - run: git config core.symlinks true
 
       # For testing that things work when the user already installed Zig
