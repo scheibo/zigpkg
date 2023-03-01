@@ -53,20 +53,22 @@ jobs:
         if: ${{ matrix.zig == 'local' && matrix.os == 'windows-latest' }}
 
       # Run tests both in our default optimization mode (Default) and our preferred
-      # optimization mode (ReleaseFast, though some projects will want ReleaseSafe)
+      # optimization mode (ReleaseFast, though some projects will want ReleaseSafe).
       - run: zig build test ${{matrix.options}}
       - run: zig build test ${{matrix.options}} -Doptimize=ReleaseFast
 
-      # With everything set up we can now run the TypeScript compiler/unit tests/linter
-      # `make lint` runs both eslint for the JavasScript code and the Zig formatter
+      # With everything set up we can now run the TypeScript compiler/unit tests.
       - run: npm run compile
       - run: npm test
-      - run: make lint
 
       # Build the static zigpkg library (the default) to the build directory so
       # that the C example has something link against and run all our examples
       - run: zig build ${{matrix.options}} -p build
       - run: make example
+
+      # We run the lint check now, after the js-example has installed its dependencies so
+      # that ESLint doesn't complain about things that depend on being able to resolve types.
+      - run: make lint
 
       # We want to run the C example again with a dynamic library, and so clean
       # things up to ensure we have a hermetic environment. However, this potentially
