@@ -6,6 +6,8 @@ type WASM = {instance: {exports: AddOn}};
 let ADDON: AddOn | undefined = undefined;
 let loading: Promise<void> | undefined = undefined;
 
+const ROOT = path.join(__dirname, '..', '..');
+
 export async function initialize(addon?: 'node' | 'wasm') {
   if (loading) throw new Error('Cannot call initialize more than once');
   loading = load(addon);
@@ -16,10 +18,9 @@ export async function initialize(addon?: 'node' | 'wasm') {
 }
 
 async function load(addon?: 'node' | 'wasm') {
-  const src = /src[/\\]pkg$/.test(__dirname);
   if (!addon || addon == 'node') {
     try {
-      ADDON = require(src ? `../../build/lib/zigpkg.node` : `../lib/zigpkg.node`) as AddOn;
+      ADDON = require(path.join(ROOT, 'build', 'lib', 'zigpkg.node')) as AddOn;
       return;
     } catch {
       if (addon == 'node') {
@@ -28,8 +29,7 @@ async function load(addon?: 'node' | 'wasm') {
     }
   }
   try {
-    const buf = fs.readFileSync(
-      path.resolve(__dirname, src ? `../../build/lib/zigpkg.wasm` : `../lib/zigpkg.wasm`));
+    const buf = fs.readFileSync(path.join(ROOT, 'build', 'lib', 'zigpkg.wasm'));
     const wasm =  await WebAssembly.instantiate(buf, {env: {overflow}}) as unknown as WASM
     ADDON = wasm.instance.exports;
   } catch (err) {
