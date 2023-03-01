@@ -96,7 +96,7 @@ js-example: src/examples/js/node_modules
 
 .PHONY: zig-example
 zig-example:
-	cd src/examples/zig; zig build run -- 40
+	cd src/examples/zig; zig build -Dadd run -- 40
 
 .PHONY: example
 example: c-example js-example zig-example
