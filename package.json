@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Example Zig project demonstrating a library usable in C/Node/WASM/Zig",
   "repository": "github:scheibo/zigpkg",
-  "license": "CC0-1.0",
+  "license": "0BSD",
   "sideEffects": false,
   "main": "build/pkg/index.js",
   "types": "build/pkg/index.d.ts",
