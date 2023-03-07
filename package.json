@@ -55,6 +55,7 @@
     "parserOptions": {"ecmaVersion": 11},
     "ignorePatterns": ["dist/", "node_modules/", "src/examples/zig", "build/"],
     "env": {"es6": true, "node": true, "browser": true},
+    "rules": {"no-empty": [2, {"allowEmptyCatch": true}]},
     "overrides": [{
       "files": ["**/*.ts"],
       "parser": "@typescript-eslint/parser",
