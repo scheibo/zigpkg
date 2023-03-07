@@ -24,7 +24,7 @@ async function load(addon?: 'node' | 'wasm') {
       return;
     } catch {
       if (addon == 'node') {
-        throw new Error('Native addon not found - did you run `npm exec install-zigpkg`?');
+        throw new Error('Native addon not found - did you run `npx install-zigpkg`?');
       }
     }
   }
@@ -34,7 +34,7 @@ async function load(addon?: 'node' | 'wasm') {
     ADDON = wasm.instance.exports;
   } catch (err) {
     const message = addon ? 'Unable to find addons' : 'WASM addon not found';
-    throw new Error(`${message} - did you run \`npm exec install-zigpkg\`?`);
+    throw new Error(`${message} - did you run \`npx install-zigpkg\`?`);
   }
 }
 

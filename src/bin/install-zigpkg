@@ -283,7 +283,7 @@ const downloadImportLib = async () => {
           if (addon.options.add) opts.push('-Dadd');
           if (addon.options.subtract) opts.push('-Dsubtract');
         }
-      } else {
+      } else if (!options) {
         const addon = await WebAssembly.instantiate(fs.readFileSync(copy), {
           env: {overflow: () => {throw new Error();} } // unreachable
         });
