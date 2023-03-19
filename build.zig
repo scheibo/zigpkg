@@ -200,7 +200,7 @@ pub fn build(b: *std.Build) !void {
         tests.setExecCmd(&.{ "kcov", "--include-pattern=src/lib", path, null });
     }
 
-    b.step("test", "Run all tests").dependOn(if (test_no_exec) &tests.run().step else &tests.step);
+    b.step("test", "Run all tests").dependOn(if (test_no_exec) &tests.step else &tests.run().step);
 }
 
 fn maybeStrip(
