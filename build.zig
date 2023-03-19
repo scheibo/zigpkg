@@ -70,13 +70,17 @@ pub fn build(b: *std.Build) !void {
             std.process.exit(1);
         }
         lib.linker_allow_shlib_undefined = true;
-        const out = b.fmt("build/lib/{s}", .{addon});
-        maybeStrip(b, lib, b.getInstallStep(), strip, cmd, out);
+        maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
         if (pic) lib.force_pic = pic;
         // Always emit to build/lib because this is where the driver code expects to find it
-        // TODO: switch to whatever ziglang/zig#2231 comes up with
-        lib.emit_bin = .{ .emit_to = out };
-        b.getInstallStep().dependOn(&lib.step);
+        // TODO(ziglang/zig#2231): using the following used to work (perhaps incorrectly):
+        //
+        //    lib.emit_bin = .{ .emit_to = b.fmt("build/lib/{s}", .{addon}) };
+        //    b.getInstallStep().dependOn(&lib.step);
+        //
+        // But ziglang/zig#14647 broke this so we now need to do an install() and then manually
+        // rename the file ourself in install-pkmn-engine
+        lib.install();
     } else if (wasm) {
         const lib = b.addSharedLibrary(.{
             .name = name,
@@ -117,7 +121,7 @@ pub fn build(b: *std.Build) !void {
         lib.addOptions("zigpkg_options", options);
         lib.setMainPkgPath("./");
         lib.addIncludePath("src/include");
-        maybeStrip(b, lib, b.getInstallStep(), strip, cmd, null);
+        maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
         if (pic) lib.force_pic = pic;
         lib.install();
         c = true;
@@ -132,7 +136,7 @@ pub fn build(b: *std.Build) !void {
         lib.setMainPkgPath("./");
         lib.addIncludePath("src/include");
         lib.bundle_compiler_rt = true;
-        maybeStrip(b, lib, b.getInstallStep(), strip, cmd, null);
+        maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
         if (pic) lib.force_pic = pic;
         lib.install();
         c = true;
@@ -179,7 +183,6 @@ pub fn build(b: *std.Build) !void {
 
     const tests = b.addTest(.{
         .root_source_file = .{ .path = test_file },
-        .kind = if (test_no_exec) .test_exe else .@"test",
         .optimize = optimize,
         .target = target,
     });
@@ -187,7 +190,7 @@ pub fn build(b: *std.Build) !void {
     tests.setFilter(test_filter);
     tests.addOptions("zigpkg_options", options);
     tests.single_threaded = true;
-    maybeStrip(b, tests, &tests.step, strip, cmd, null);
+    maybeStrip(b, tests, &tests.step, strip, cmd);
     if (pic) tests.force_pic = pic;
     if (test_bin) |bin| {
         tests.name = std.fs.path.basename(bin);
@@ -197,10 +200,7 @@ pub fn build(b: *std.Build) !void {
         tests.setExecCmd(&.{ "kcov", "--include-pattern=src/lib", path, null });
     }
 
-    const format = b.addFmt(&.{"."});
-
-    b.step("format", "Format source files").dependOn(&format.step);
-    b.step("test", "Run all tests").dependOn(&tests.step);
+    b.step("test", "Run all tests").dependOn(if (test_no_exec) &tests.run().step else &tests.step);
 }
 
 fn maybeStrip(
@@ -209,7 +209,6 @@ fn maybeStrip(
     step: *std.Build.Step,
     strip: bool,
     cmd: ?[]const u8,
-    out: ?[]const u8,
 ) void {
     artifact.strip = strip;
     if (!strip or cmd == null) return;
@@ -219,11 +218,6 @@ fn maybeStrip(
     // Assuming GNU strip, which complains "illegal pathname found in archive member"...
     if (!mac and artifact.isStaticLibrary()) return;
     const sh = b.addSystemCommand(&[_][]const u8{ cmd.?, if (mac) "-x" else "-s" });
-    if (out) |path| {
-        sh.addArg(path);
-        sh.step.dependOn(&artifact.step);
-    } else {
-        sh.addArtifactArg(artifact);
-    }
+    sh.addArtifactArg(artifact);
     step.dependOn(&sh.step);
 }
