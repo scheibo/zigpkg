@@ -79,8 +79,8 @@ pub fn build(b: *std.Build) !void {
         //    b.getInstallStep().dependOn(&lib.step);
         //
         // But ziglang/zig#14647 broke this so we now need to do an install() and then manually
-        // rename the file ourself in install-pkmn-engine
-        lib.install();
+        // rename the file ourself in install-zig-engine
+        b.installArtifact(lib);
     } else if (wasm) {
         const lib = b.addSharedLibrary(.{
             .name = name,
@@ -109,7 +109,7 @@ pub fn build(b: *std.Build) !void {
             sh.addFileSourceArg(.{ .path = out });
             b.getInstallStep().dependOn(&sh.step);
         }
-        lib.install();
+        b.installArtifact(lib);
     } else if (dynamic) {
         const lib = b.addSharedLibrary(.{
             .name = name,
@@ -123,7 +123,7 @@ pub fn build(b: *std.Build) !void {
         lib.addIncludePath("src/include");
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
         if (pic) lib.force_pic = pic;
-        lib.install();
+        b.installArtifact(lib);
         c = true;
     } else {
         const lib = b.addStaticLibrary(.{
@@ -138,7 +138,7 @@ pub fn build(b: *std.Build) !void {
         lib.bundle_compiler_rt = true;
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
         if (pic) lib.force_pic = pic;
-        lib.install();
+        b.installArtifact(lib);
         c = true;
     }
 
@@ -176,31 +176,24 @@ pub fn build(b: *std.Build) !void {
     const coverage = b.option([]const u8, "test-coverage", "Generate test coverage");
     const test_file =
         b.option([]const u8, "test-file", "Input file for test") orelse "src/lib/test.zig";
-    const test_bin = b.option([]const u8, "test-bin", "Emit test binary to");
     const test_filter = b.option([]const u8, "test-filter", "Skip tests that do not match filter");
-    const test_no_exec =
-        b.option(bool, "test-no-exec", "Compiles test binary without running it") orelse false;
 
     const tests = b.addTest(.{
         .root_source_file = .{ .path = test_file },
         .optimize = optimize,
         .target = target,
+        .filter = test_filter,
     });
-    tests.setMainPkgPath("./");
-    tests.setFilter(test_filter);
     tests.addOptions("zigpkg_options", options);
+    tests.setMainPkgPath("./");
     tests.single_threaded = true;
     maybeStrip(b, tests, &tests.step, strip, cmd);
     if (pic) tests.force_pic = pic;
-    if (test_bin) |bin| {
-        tests.name = std.fs.path.basename(bin);
-        if (std.fs.path.dirname(bin)) |dir| tests.setOutputDir(dir);
-    }
     if (coverage) |path| {
         tests.setExecCmd(&.{ "kcov", "--include-pattern=src/lib", path, null });
     }
 
-    b.step("test", "Run all tests").dependOn(if (test_no_exec) &tests.step else &tests.run().step);
+    b.step("test", "Run all tests").dependOn(&b.addRunArtifact(tests).step);
 }
 
 fn maybeStrip(
