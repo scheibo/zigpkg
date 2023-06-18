@@ -7,7 +7,7 @@ default: check
 
 .PHONY: zig-build
 zig-build:
-	zig build -fsummary -Dadd -p build
+	zig build --summary all -Dadd -p build
 
 .PHONY: js-build
 js-build: node_modules
@@ -54,8 +54,8 @@ fix: zig-fix js-fix
 
 .PHONY: zig-test
 zig-test:
-	zig build -fsummary -Dsubtract test
-	zig build -fsummary -Dadd -Dsubtract test
+	zig build --summary all -Dsubtract test
+	zig build --summary all -Dadd -Dsubtract test
 
 .PHONY: js-test
 js-test: js-build
@@ -68,8 +68,8 @@ test: zig-test js-test
 zig-coverage:
 	rm -rf coverage/zig
 	mkdir -p coverage/zig
-	zig build -fsummary test -Dtest-coverage=coverage/zig/zigpkg
-	zig build -fsummary -Dadd -Dsubtract test -Dtest-coverage=coverage/zig/zigpkg2
+	zig build --summary all test -Dtest-coverage=coverage/zig/zigpkg
+	zig build --summary all -Dadd -Dsubtract test -Dtest-coverage=coverage/zig/zigpkg2
 	kcov --merge coverage/zig/merged coverage/zig/zigpkg coverage/zig/zigpkg2
 
 .PHONY: js-coverage
@@ -96,7 +96,7 @@ js-example: src/examples/js/node_modules
 
 .PHONY: zig-example
 zig-example:
-	cd src/examples/zig; zig build -fsummary -Dadd run -- 40
+	cd src/examples/zig; zig build --summary all -Dadd run -- 40
 
 .PHONY: example
 example: c-example js-example zig-example
