@@ -133,7 +133,7 @@ const Number = struct {
                 }
             },
             .Float, .ComptimeFloat => {
-                if (c.napi_create_double(env, @floatCast(f64, value), &result) != c.napi_ok) {
+                if (c.napi_create_double(env, @floatCast(value), &result) != c.napi_ok) {
                     return Error.throw(env, "Failed to create double " ++ name);
                 }
             },
@@ -148,7 +148,7 @@ const Number = struct {
             .Float => {
                 var result: f64 = undefined;
                 return switch (c.napi_get_value_double(env, value, &result)) {
-                    c.napi_ok => @floatCast(T, result),
+                    c.napi_ok => @floatCast(result),
                     c.napi_number_expected => Error.throw(env, name ++ " must be a number"),
                     else => unreachable,
                 };
@@ -158,7 +158,7 @@ const Number = struct {
                     .signed => {
                         var result: i32 = undefined;
                         return switch (c.napi_get_value_int32(env, value, &result)) {
-                            c.napi_ok => if (info.bits == 32) result else @intCast(T, result),
+                            c.napi_ok => if (info.bits == 32) result else @intCast(result),
                             c.napi_number_expected => Error.throw(env, name ++ " must be a number"),
                             else => unreachable,
                         };
@@ -166,7 +166,7 @@ const Number = struct {
                     .unsigned => {
                         var result: u32 = undefined;
                         return switch (c.napi_get_value_uint32(env, value, &result)) {
-                            c.napi_ok => if (info.bits == 32) result else @intCast(T, result),
+                            c.napi_ok => if (info.bits == 32) result else @intCast(result),
                             c.napi_number_expected => Error.throw(env, name ++ " must be a number"),
                             else => unreachable,
                         };
@@ -175,7 +175,7 @@ const Number = struct {
                 33...63 => {
                     var result: i64 = undefined;
                     return switch (c.napi_get_value_int64(env, value, &result)) {
-                        c.napi_ok => @intCast(T, result),
+                        c.napi_ok => @intCast(result),
                         c.napi_number_expected => Error.throw(env, name ++ " must be a number"),
                         else => unreachable,
                     };
@@ -184,9 +184,9 @@ const Number = struct {
                     var result: i64 = undefined;
                     return switch (c.napi_get_value_int64(env, value, &result)) {
                         c.napi_ok => switch (info.signedness) {
-                            .signed => return @as(T, value),
+                            .signed => return value,
                             .unsigned => return if (0 <= value)
-                                @intCast(T, value)
+                                @intCast(value)
                             else
                                 error.Overflow,
                         },
