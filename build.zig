@@ -57,13 +57,13 @@ pub fn build(b: *std.Build) !void {
             .root_source_file = .{ .path = "src/lib/binding/node.zig" },
             .optimize = optimize,
             .target = target,
+            .main_pkg_path = .{ .path = "." },
         });
         lib.addOptions("zigpkg_options", options);
-        lib.setMainPkgPath("./");
-        lib.addSystemIncludePath(headers);
+        lib.addSystemIncludePath(.{ .path = headers });
         lib.linkLibC();
         if (node_import_lib) |il| {
-            lib.addObjectFile(il);
+            lib.addObjectFile(.{ .path = il });
         } else if ((try NativeTargetInfo.detect(target)).target.os.tag == .windows) {
             try std.io.getStdErr().writeAll("Must provide --node-import-library path on Windows\n");
             std.process.exit(1);
@@ -89,9 +89,9 @@ pub fn build(b: *std.Build) !void {
                 else => optimize,
             },
             .target = .{ .cpu_arch = .wasm32, .os_tag = .freestanding },
+            .main_pkg_path = .{ .path = "." },
         });
         lib.addOptions("zigpkg_options", options);
-        lib.setMainPkgPath("./");
         lib.stack_size = wasm_stack_size;
         lib.rdynamic = true;
         lib.strip = strip;
@@ -116,10 +116,10 @@ pub fn build(b: *std.Build) !void {
             .version = try std.SemanticVersion.parse(version),
             .optimize = optimize,
             .target = target,
+            .main_pkg_path = .{ .path = "." },
         });
         lib.addOptions("zigpkg_options", options);
-        lib.setMainPkgPath("./");
-        lib.addIncludePath("src/include");
+        lib.addIncludePath(.{ .path = "src/include" });
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
         if (pic) lib.force_pic = pic;
         b.installArtifact(lib);
@@ -130,10 +130,10 @@ pub fn build(b: *std.Build) !void {
             .root_source_file = .{ .path = "src/lib/binding/c.zig" },
             .optimize = optimize,
             .target = target,
+            .main_pkg_path = .{ .path = "." },
         });
         lib.addOptions("zigpkg_options", options);
-        lib.setMainPkgPath("./");
-        lib.addIncludePath("src/include");
+        lib.addIncludePath(.{ .path = "src/include" });
         lib.bundle_compiler_rt = true;
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
         if (pic) lib.force_pic = pic;
@@ -182,9 +182,9 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
         .target = target,
         .filter = test_filter,
+        .main_pkg_path = .{ .path = "." },
     });
     tests.addOptions("zigpkg_options", options);
-    tests.setMainPkgPath("./");
     tests.single_threaded = true;
     maybeStrip(b, tests, &tests.step, strip, cmd);
     if (pic) tests.force_pic = pic;
