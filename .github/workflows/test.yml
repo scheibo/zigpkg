@@ -20,13 +20,14 @@ jobs:
         options: ['', '-Dadd', '-Dsubtract', '-Dadd -Dsubtract']
         # Generally we should pin our version to something stable and add all
         # major support here as well as run against master if possible
-        zig: [local] # master
+        zig: [0.11.0, master]
     runs-on: ${{matrix.os}}
     steps:
       # The scheduled canary run of this workflow should only run against master
       # as simply running our code against known Zig versions won't add anything
-      # - run: exit 0
-      #   if: ${{ github.event_name == 'schedule' && matrix.zig != 'master' }}
+      - run: exit 0
+        if: ${{ github.event_name == 'schedule' && matrix.zig != 'master' }}
+
       - uses: actions/checkout@v3
 
       # The Zig example in this repository currently relies on a symlink hack
@@ -35,11 +36,9 @@ jobs:
       - run: git config core.symlinks true
 
       # For testing that things work when the user already installed Zig
-      # NOTE: we rely on npm postinstall-ed zig for local zig
-      # - uses: goto-bus-stop/setup-zig@v2
-      #   if: ${{ matrix.zig != 'local' }}
-      #   with:
-      #     version: ${{matrix.zig}}
+      # NOTE: we rely on npm postinstall-ed zig for v0.11.0
+      - uses: goto-bus-stop/setup-zig@v2
+        if: ${{ matrix.zig == 'master' }}
 
       # Install our dependencies for Node and run install-zigpkg which will
       # possibly download Zig and which builds our Node/WASM extensions
@@ -48,9 +47,9 @@ jobs:
       # If we're using the version of Zig installed via install-zigpkg we
       # need to place it on our path (which sadly is different on Windows)
       - run: echo "${GITHUB_WORKSPACE}/build/bin/zig" >> $GITHUB_PATH
-        if: ${{ matrix.zig == 'local' && matrix.os != 'windows-latest' }}
+        if: ${{ matrix.zig != 'master' && matrix.os != 'windows-latest' }}
       - run: echo "${env:GITHUB_WORKSPACE}/build/bin/zig" >> $env:GITHUB_PATH
-        if: ${{ matrix.zig == 'local' && matrix.os == 'windows-latest' }}
+        if: ${{ matrix.zig != 'master' && matrix.os == 'windows-latest' }}
 
       # Run tests both in our default optimization mode (Default) and our preferred
       # optimization mode (ReleaseFast, though some projects will want ReleaseSafe).
