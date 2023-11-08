@@ -81,7 +81,7 @@ pub fn build(b: *std.Build) !void {
         // rename the file ourself in install-zig-engine
         b.installArtifact(lib);
     } else if (wasm) {
-        const lib = b.addSharedLibrary(.{
+        const opts = .{
             .name = name,
             .root_source_file = .{ .path = "src/lib/binding/wasm.zig" },
             .optimize = switch (optimize) {
@@ -90,10 +90,19 @@ pub fn build(b: *std.Build) !void {
             },
             .target = .{ .cpu_arch = .wasm32, .os_tag = .freestanding },
             .main_pkg_path = .{ .path = "." },
-        });
+        };
+        const lib = if (@hasField((std.Build.Step.Compile), "entry")) lib: {
+            const exe = b.addExecutable(opts);
+            exe.entry = .disabled;
+            exe.export_symbol_names = &[_][]const u8{ "ADD", "SUBTRACT", "compute" };
+            break :lib exe;
+        } else lib: {
+            const shared = b.addSharedLibrary(opts);
+            shared.rdynamic = true;
+            break :lib shared;
+        };
         lib.addOptions("zigpkg_options", options);
         lib.stack_size = wasm_stack_size;
-        lib.rdynamic = true;
         lib.strip = strip;
         if (pic) lib.force_pic = pic;
         const opt = b.findProgram(
