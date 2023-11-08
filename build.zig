@@ -116,8 +116,11 @@ pub fn build(b: *std.Build) !void {
             sh.addArg("-o");
             sh.addFileSourceArg(.{ .path = out });
             b.getInstallStep().dependOn(&sh.step);
+        } else {
+            b.getInstallStep().dependOn(&b.addInstallArtifact(lib, .{
+                .dest_dir = .{ .override = std.Build.InstallDir{ .lib = {} } },
+            }).step);
         }
-        b.installArtifact(lib);
     } else if (dynamic) {
         const lib = b.addSharedLibrary(.{
             .name = name,
