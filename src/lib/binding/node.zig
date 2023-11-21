@@ -33,7 +33,7 @@ fn compute(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_valu
 }
 
 fn options(env: c.napi_env, comptime name: [:0]const u8) !c.napi_value {
-    var object = try Object.init(env, name);
+    const object = try Object.init(env, name);
     const properties = [_]c.napi_property_descriptor{
         Property.init("add", .{
             .value = try Boolean.init(env, zigpkg.options.add, "add"),
