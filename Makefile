@@ -84,19 +84,19 @@ check: test lint
 
 .PHONY: c-example
 c-example:
-	$(MAKE) -C src/examples/c
-	./src/examples/c/example 40
+	$(MAKE) -C examples/c
+	./examples/c/example 40
 
-src/examples/js/node_modules:
-	npm -C src/examples/js install --install-links=false
+examples/js/node_modules:
+	npm -C examples/js install --install-links=false
 
 .PHONY: js-example
-js-example: src/examples/js/node_modules
-	npm -C src/examples/js start -- 40
+js-example: examples/js/node_modules
+	npm -C examples/js start -- 40
 
 .PHONY: zig-example
 zig-example:
-	cd src/examples/zig; zig build --summary all -Dadd run -- 40
+	cd examples/zig; zig build --summary all -Dadd run -- 40
 
 .PHONY: example
 example: c-example js-example zig-example
@@ -110,9 +110,9 @@ benchmark:
 
 .PHONY: clean-example
 clean-example:
-	$(MAKE) clean -C src/examples/c
-	rm -rf src/examples/js/.parcel* src/examples/js/{build,dist}
-	rm -rf src/examples/zig/zig-*
+	$(MAKE) clean -C examples/c
+	rm -rf examples/js/.parcel* examples/js/{build,dist}
+	rm -rf examples/zig/zig-*
 
 .PHONY: clean
 clean: clean-example

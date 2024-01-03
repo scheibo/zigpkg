@@ -19,7 +19,7 @@
 # requires the static library to be named libzigpkg.a instead of zigpkg.lib, but the latter seems to
 # work fine.
 
-ROOT=../../../build
+ROOT=../../build
 CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(ROOT)/include
 
 ifneq ($(OS),Windows_NT)
