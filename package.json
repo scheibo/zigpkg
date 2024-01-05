@@ -10,8 +10,8 @@
   "files": [
     "build.zig",
     "src/bin/install-zigpkg",
-    "src/lib/binding/node.zig",
-    "src/lib/binding/wasm.zig",
+    "src/lib/node.zig",
+    "src/lib/wasm.zig",
     "src/lib/options.zig",
     "src/lib/zigpkg.zig",
     "build/pkg/index.d.ts",

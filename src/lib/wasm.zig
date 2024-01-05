@@ -1,4 +1,4 @@
-const zigpkg = @import("../zigpkg.zig");
+const zigpkg = @import("./zigpkg.zig");
 
 export const ADD = zigpkg.options.add;
 export const SUBTRACT = zigpkg.options.subtract;

@@ -1,4 +1,4 @@
-const zigpkg = @import("../zigpkg.zig");
+const zigpkg = @import("./zigpkg.zig");
 
 export const ZIGPKG_OPTIONS: extern struct { add: bool, subtract: bool } = .{
     .add = zigpkg.options.add,

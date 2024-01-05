@@ -1,8 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const NativeTargetInfo = std.zig.system.NativeTargetInfo;
-
 pub const Options = struct { add: ?bool = null, subtract: ?bool = null };
 
 pub fn module(b: *std.Build, options: Options) *std.Build.Module {
@@ -11,8 +9,8 @@ pub fn module(b: *std.Build, options: Options) *std.Build.Module {
     build_options.addOption(?bool, "add", options.add);
     build_options.addOption(?bool, "subtract", options.subtract);
     return b.createModule(.{
-        .source_file = .{ .path = dirname ++ "/src/lib/zigpkg.zig" },
-        .dependencies = &.{.{ .name = "zigpkg_options", .module = build_options.createModule() }},
+        .root_source_file = .{ .path = dirname ++ "/src/lib/zigpkg.zig" },
+        .imports = &.{.{ .name = "zigpkg_options", .module = build_options.createModule() }},
     });
 }
 
@@ -27,8 +25,8 @@ pub fn build(b: *std.Build) !void {
     const wasm_stack_size =
         b.option(u64, "wasm-stack-size", "The size of WASM stack") orelse std.wasm.page_size;
     const dynamic = b.option(bool, "dynamic", "Build a dynamic library") orelse false;
-    const strip = b.option(bool, "strip", "Strip debugging symbols from binary") orelse false;
-    const pic = b.option(bool, "pic", "Force position independent code") orelse false;
+    const strip = b.option(bool, "strip", "Strip debugging symbols from binary");
+    const pic = b.option(bool, "pic", "Force position independent code");
 
     const cmd = b.findProgram(&[_][]const u8{"strip"}, &[_][]const u8{}) catch null;
 
@@ -54,23 +52,23 @@ pub fn build(b: *std.Build) !void {
         const addon = b.fmt("{s}.node", .{name});
         const lib = b.addSharedLibrary(.{
             .name = addon,
-            .root_source_file = .{ .path = "src/lib/binding/node.zig" },
+            .root_source_file = .{ .path = "src/lib/node.zig" },
             .optimize = optimize,
             .target = target,
-            .main_pkg_path = .{ .path = "." },
+            .strip = strip,
+            .pic = pic,
         });
-        lib.addOptions("zigpkg_options", options);
+        lib.root_module.addOptions("zigpkg_options", options);
         lib.addSystemIncludePath(.{ .path = headers });
         lib.linkLibC();
         if (node_import_lib) |il| {
             lib.addObjectFile(.{ .path = il });
-        } else if ((try NativeTargetInfo.detect(target)).target.os.tag == .windows) {
+        } else if (target.result.os.tag == .windows) {
             try std.io.getStdErr().writeAll("Must provide --node-import-library path on Windows\n");
             std.process.exit(1);
         }
         lib.linker_allow_shlib_undefined = true;
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
-        if (pic) lib.force_pic = pic;
         // Always emit to build/lib because this is where the driver code expects to find it
         // TODO(ziglang/zig#2231): using the following used to work (perhaps incorrectly):
         //
@@ -83,28 +81,20 @@ pub fn build(b: *std.Build) !void {
     } else if (wasm) {
         const opts = .{
             .name = name,
-            .root_source_file = .{ .path = "src/lib/binding/wasm.zig" },
+            .root_source_file = .{ .path = "src/lib/wasm.zig" },
             .optimize = switch (optimize) {
                 .ReleaseFast, .ReleaseSafe => .ReleaseSmall,
                 else => optimize,
             },
-            .target = .{ .cpu_arch = .wasm32, .os_tag = .freestanding },
-            .main_pkg_path = .{ .path = "." },
+            .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
+            .strip = strip,
+            .pic = pic,
         };
-        const lib = if (@hasField((std.Build.Step.Compile), "entry")) lib: {
-            const exe = b.addExecutable(opts);
-            exe.entry = .disabled;
-            exe.export_symbol_names = &[_][]const u8{ "ADD", "SUBTRACT", "compute" };
-            break :lib exe;
-        } else lib: {
-            const shared = b.addSharedLibrary(opts);
-            shared.rdynamic = true;
-            break :lib shared;
-        };
-        lib.addOptions("zigpkg_options", options);
+        const lib = b.addExecutable(opts);
+        lib.entry = .disabled;
         lib.stack_size = wasm_stack_size;
-        lib.strip = strip;
-        if (pic) lib.force_pic = pic;
+        lib.root_module.export_symbol_names = &[_][]const u8{ "ADD", "SUBTRACT", "compute" };
+        lib.root_module.addOptions("zigpkg_options", options);
         const opt = b.findProgram(
             &[_][]const u8{"wasm-opt"},
             &[_][]const u8{"./node_modules/.bin"},
@@ -114,7 +104,7 @@ pub fn build(b: *std.Build) !void {
             const sh = b.addSystemCommand(&[_][]const u8{ opt.?, "-O4" });
             sh.addArtifactArg(lib);
             sh.addArg("-o");
-            sh.addFileSourceArg(.{ .path = out });
+            sh.addFileArg(.{ .path = out });
             b.getInstallStep().dependOn(&sh.step);
         } else {
             b.getInstallStep().dependOn(&b.addInstallArtifact(lib, .{
@@ -124,31 +114,31 @@ pub fn build(b: *std.Build) !void {
     } else if (dynamic) {
         const lib = b.addSharedLibrary(.{
             .name = name,
-            .root_source_file = .{ .path = "src/lib/binding/c.zig" },
+            .root_source_file = .{ .path = "src/lib/c.zig" },
             .version = try std.SemanticVersion.parse(version),
             .optimize = optimize,
             .target = target,
-            .main_pkg_path = .{ .path = "." },
+            .strip = strip,
+            .pic = pic,
         });
-        lib.addOptions("zigpkg_options", options);
+        lib.root_module.addOptions("zigpkg_options", options);
         lib.addIncludePath(.{ .path = "src/include" });
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
-        if (pic) lib.force_pic = pic;
         b.installArtifact(lib);
         c = true;
     } else {
         const lib = b.addStaticLibrary(.{
             .name = name,
-            .root_source_file = .{ .path = "src/lib/binding/c.zig" },
+            .root_source_file = .{ .path = "src/lib/c.zig" },
             .optimize = optimize,
             .target = target,
-            .main_pkg_path = .{ .path = "." },
+            .strip = strip,
+            .pic = pic,
         });
-        lib.addOptions("zigpkg_options", options);
+        lib.root_module.addOptions("zigpkg_options", options);
         lib.addIncludePath(.{ .path = "src/include" });
         lib.bundle_compiler_rt = true;
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
-        if (pic) lib.force_pic = pic;
         b.installArtifact(lib);
         c = true;
     }
@@ -194,12 +184,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
         .target = target,
         .filter = test_filter,
-        .main_pkg_path = .{ .path = "." },
+        .single_threaded = true,
+        .strip = strip,
+        .pic = pic,
     });
-    tests.addOptions("zigpkg_options", options);
-    tests.single_threaded = true;
+    tests.root_module.addOptions("zigpkg_options", options);
     maybeStrip(b, tests, &tests.step, strip, cmd);
-    if (pic) tests.force_pic = pic;
     if (coverage) |path| {
         tests.setExecCmd(&.{ "kcov", "--include-pattern=src/lib", path, null });
     }
@@ -209,13 +199,12 @@ pub fn build(b: *std.Build) !void {
 
 fn maybeStrip(
     b: *std.Build,
-    artifact: *std.Build.CompileStep,
+    artifact: *std.Build.Step.Compile,
     step: *std.Build.Step,
-    strip: bool,
+    strip: ?bool,
     cmd: ?[]const u8,
 ) void {
-    artifact.strip = strip;
-    if (!strip or cmd == null) return;
+    if (!(strip orelse false) or cmd == null) return;
     // Using `strip -r -u` for dynamic libraries is supposed to work on macOS but doesn't...
     const mac = builtin.os.tag == .macos;
     if (mac and artifact.isDynamicLibrary()) return;

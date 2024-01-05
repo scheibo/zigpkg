@@ -1,5 +1,5 @@
 const std = @import("std");
-const zigpkg = @import("../zigpkg.zig");
+const zigpkg = @import("./zigpkg.zig");
 
 const c = @cImport({
     @cDefine("NAPI_VERSION", "8");

@@ -20,7 +20,7 @@ jobs:
         options: ['', '-Dadd', '-Dsubtract', '-Dadd -Dsubtract']
         # Generally we should pin our version to something stable and add all
         # major support here as well as run against master if possible
-        zig: [0.11.0, master]
+        zig: [local] # master
     runs-on: ${{matrix.os}}
     steps:
       # The scheduled canary run of this workflow should only run against master
@@ -36,9 +36,9 @@ jobs:
       - run: git config core.symlinks true
 
       # For testing that things work when the user already installed Zig
-      # NOTE: we rely on npm postinstall-ed zig for v0.11.0
-      - uses: goto-bus-stop/setup-zig@v2
-        if: ${{ matrix.zig == 'master' }}
+      # NOTE: we rely on npm postinstall-ed zig for local zig
+      # - uses: goto-bus-stop/setup-zig@v2
+      #   if: ${{ matrix.zig == 'master' }}
 
       # Install our dependencies for Node and run install-zigpkg which will
       # possibly download Zig and which builds our Node/WASM extensions

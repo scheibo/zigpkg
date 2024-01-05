@@ -1,5 +1,5 @@
 const std = @import("std");
-const zigpkg = @import("lib/zigpkg/build.zig");
+const zigpkg = @import("zigpkg");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -14,7 +14,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .target = target,
     });
-    exe.addModule("zigpkg", zigpkg.module(b, .{ .add = add, .subtract = subtract }));
+    exe.root_module.addImport("zigpkg", zigpkg.module(b, .{
+        .add = add,
+        .subtract = subtract,
+    }));
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);

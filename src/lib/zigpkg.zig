@@ -19,16 +19,16 @@ pub fn compute(n: u32) Error!u32 {
 
 test "compute" {
     if (options.add and options.subtract) {
-        try expectEqual(@as(u32, 1), try compute(4));
+        try expectEqual(1, try compute(4));
         try expectError(error.Overflow, compute(std.math.maxInt(u32)));
         try expectError(error.Overflow, compute(0));
     } else if (options.add) {
-        try expectEqual(@as(u32, 7), try compute(5));
+        try expectEqual(7, try compute(5));
         try expectError(error.Overflow, compute(std.math.maxInt(u32)));
     } else if (options.subtract) {
-        try expectEqual(@as(u32, 5), try compute(10));
+        try expectEqual(5, try compute(10));
         try expectError(error.Overflow, compute(4));
     } else {
-        try expectEqual(@as(u32, 13), try compute(13));
+        try expectEqual(13, try compute(13));
     }
 }
