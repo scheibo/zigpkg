@@ -104,10 +104,6 @@ example: c-example js-example zig-example
 .PHONY: integration
 integration: build check example
 
-.PHONY: benchmark
-benchmark:
-	npm run benchmark
-
 .PHONY: clean-example
 clean-example:
 	$(MAKE) clean -C examples/c
