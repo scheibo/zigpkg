@@ -152,7 +152,11 @@ pub fn build(b: *std.Build) !void {
         b.getInstallStep().dependOn(&header.step);
 
         const pc = b.fmt("lib{s}.pc", .{name});
-        const file = try b.cache_root.join(b.allocator, &.{pc});
+        const file = try std.fs.path.relative(
+            b.allocator,
+            try std.process.getCwdAlloc(b.allocator),
+            try b.cache_root.join(b.allocator, &.{pc}),
+        );
         const pkgconfig_file = try std.fs.cwd().createFile(file, .{});
 
         const dirname = comptime std.fs.path.dirname(@src().file) orelse ".";
