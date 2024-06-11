@@ -3,9 +3,9 @@
     "zigpkg": "file:../.."
   },
   "devDependencies": {
-    "parcel": "^2.10.3",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.10"
+    "parcel": "^2.12.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.13"
   },
   "scripts": {
     "prestart": "tsc -p .",
