@@ -5,6 +5,7 @@ Thumbs.db
 
 # Zig
 zig-cache/
+.zig-cache/
 zig-out/
 build/
 /docgen_tmp/
