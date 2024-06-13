@@ -9,7 +9,7 @@ pub fn module(b: *std.Build, options: Options) *std.Build.Module {
     build_options.addOption(?bool, "add", options.add);
     build_options.addOption(?bool, "subtract", options.subtract);
     return b.createModule(.{
-        .root_source_file = .{ .path = dirname ++ "/src/lib/zigpkg.zig" },
+        .root_source_file = b.path(dirname ++ "/src/lib/zigpkg.zig"),
         .imports = &.{.{ .name = "zigpkg_options", .module = build_options.createModule() }},
     });
 }
@@ -52,17 +52,17 @@ pub fn build(b: *std.Build) !void {
         const addon = b.fmt("{s}.node", .{name});
         const lib = b.addSharedLibrary(.{
             .name = addon,
-            .root_source_file = .{ .path = "src/lib/node.zig" },
+            .root_source_file = b.path("src/lib/node.zig"),
             .optimize = optimize,
             .target = target,
             .strip = strip,
             .pic = pic,
         });
         lib.root_module.addOptions("zigpkg_options", options);
-        lib.addSystemIncludePath(.{ .path = headers });
+        lib.addSystemIncludePath(b.path(headers));
         lib.linkLibC();
         if (node_import_lib) |il| {
-            lib.addObjectFile(.{ .path = il });
+            lib.addObjectFile(b.path(il));
         } else if (target.result.os.tag == .windows) {
             try std.io.getStdErr().writeAll("Must provide --node-import-library path on Windows\n");
             std.process.exit(1);
@@ -81,7 +81,7 @@ pub fn build(b: *std.Build) !void {
     } else if (wasm) {
         const opts = .{
             .name = name,
-            .root_source_file = .{ .path = "src/lib/wasm.zig" },
+            .root_source_file = b.path("src/lib/wasm.zig"),
             .optimize = switch (optimize) {
                 .ReleaseFast, .ReleaseSafe => .ReleaseSmall,
                 else => optimize,
@@ -104,7 +104,7 @@ pub fn build(b: *std.Build) !void {
             const sh = b.addSystemCommand(&[_][]const u8{ opt.?, "-O4" });
             sh.addArtifactArg(lib);
             sh.addArg("-o");
-            sh.addFileArg(.{ .path = out });
+            sh.addFileArg(b.path(out));
             b.getInstallStep().dependOn(&sh.step);
         } else {
             b.getInstallStep().dependOn(&b.addInstallArtifact(lib, .{
@@ -114,7 +114,7 @@ pub fn build(b: *std.Build) !void {
     } else if (dynamic) {
         const lib = b.addSharedLibrary(.{
             .name = name,
-            .root_source_file = .{ .path = "src/lib/c.zig" },
+            .root_source_file = b.path("src/lib/c.zig"),
             .version = try std.SemanticVersion.parse(version),
             .optimize = optimize,
             .target = target,
@@ -122,21 +122,21 @@ pub fn build(b: *std.Build) !void {
             .pic = pic,
         });
         lib.root_module.addOptions("zigpkg_options", options);
-        lib.addIncludePath(.{ .path = "src/include" });
+        lib.addIncludePath(b.path("src/include"));
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
         b.installArtifact(lib);
         c = true;
     } else {
         const lib = b.addStaticLibrary(.{
             .name = name,
-            .root_source_file = .{ .path = "src/lib/c.zig" },
+            .root_source_file = b.path("src/lib/c.zig"),
             .optimize = optimize,
             .target = target,
             .strip = strip,
             .pic = pic,
         });
         lib.root_module.addOptions("zigpkg_options", options);
-        lib.addIncludePath(.{ .path = "src/include" });
+        lib.addIncludePath(b.path("src/include"));
         lib.bundle_compiler_rt = true;
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
         b.installArtifact(lib);
@@ -145,7 +145,7 @@ pub fn build(b: *std.Build) !void {
 
     if (c) {
         const header = b.addInstallFileWithDir(
-            .{ .path = "src/include/zigpkg.h" },
+            b.path("src/include/zigpkg.h"),
             .header,
             "zigpkg.h",
         );
@@ -184,7 +184,7 @@ pub fn build(b: *std.Build) !void {
     const test_filter = b.option([]const u8, "test-filter", "Skip tests that do not match filter");
 
     const tests = b.addTest(.{
-        .root_source_file = .{ .path = test_file },
+        .root_source_file = b.path(test_file),
         .optimize = optimize,
         .target = target,
         .filter = test_filter,
