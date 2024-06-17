@@ -338,7 +338,9 @@ const downloadImportLib = async () => {
     const args = ['build', '-p', 'build', '-Doptimize=ReleaseFast', '-Dstrip', ...opts];
     if (config.type === 'node') {
       args.push(`-Dnode-headers=${path.relative(ROOT, headers)}`);
-      if (process.platform === 'win32') args.push(`-Dnode-import-library=${lib}`);
+      if (process.platform === 'win32') {
+        args.push(`-Dnode-import-library=${path.relative(ROOT, lib)}`);
+      }
     } else {
       args.push('-Dwasm');
     }
