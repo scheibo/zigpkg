@@ -9,7 +9,7 @@ pub fn module(b: *std.Build, options: Options) *std.Build.Module {
     build_options.addOption(?bool, "add", options.add);
     build_options.addOption(?bool, "subtract", options.subtract);
     return b.createModule(.{
-        .root_source_file = b.path(dirname ++ "/src/lib/zigpkg.zig"),
+        .root_source_file = .{ .cwd_relative = dirname ++ "/src/lib/zigpkg.zig" },
         .imports = &.{.{ .name = "zigpkg_options", .module = build_options.createModule() }},
     });
 }
