@@ -28,7 +28,7 @@ jobs:
       - run: exit 0
         if: ${{ github.event_name == 'schedule' && matrix.zig != 'master' }}
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # The Zig example in this repository currently relies on a symlink hack
       # and to work on Windows we need to run this.
