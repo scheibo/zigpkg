@@ -35,7 +35,7 @@ pub fn build(b: *std.Build) !void {
     defer parsed.deinit();
     const version = parsed.value.object.get("version").?.string;
     const description = parsed.value.object.get("description").?.string;
-    var repository = std.mem.split(u8, parsed.value.object.get("repository").?.string, ":");
+    var repository = std.mem.splitSequence(u8, parsed.value.object.get("repository").?.string, ":");
     std.debug.assert(std.mem.eql(u8, repository.first(), "github"));
 
     const add = b.option(bool, "add", "Enable add");
