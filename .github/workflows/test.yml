@@ -35,9 +35,9 @@ jobs:
       # TODO: remove this once ziglang/zig#14339 lands
       - run: git config core.symlinks true
 
-      # For testing that things work when the user already installed Zig
+      # For testing that things work when the user already installed Zig.
       # NOTE: we rely on npm postinstall-ed zig for local zig
-      - uses: goto-bus-stop/setup-zig@v2
+      - uses: goto-bus-stop/setup-zig@default
         if: ${{ matrix.zig == 'master' }}
 
       # Install our dependencies for Node and run install-zigpkg which will
