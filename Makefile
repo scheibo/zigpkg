@@ -108,11 +108,11 @@ integration: build check example
 clean-example:
 	$(MAKE) clean -C examples/c
 	rm -rf examples/js/.parcel* examples/js/{build,dist}
-	rm -rf examples/zig/zig-*
+	rm -rf examples/zig/zig-* examples/zig/.zig-*
 
 .PHONY: clean
 clean: clean-example
-	rm -rf zig-* build .tsbuildinfo .eslintcache
+	rm -rf .zig-* zig-* build .tsbuildinfo .eslintcache
 
 .PHONY: release
 release:
