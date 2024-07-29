@@ -1,12 +1,11 @@
 const std = @import("std");
-const zigpkg = @import("zigpkg");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const add = b.option(bool, "add", "Enable addition");
-    const subtract = b.option(bool, "subtract", "Enable subtraction");
+    const add = b.option(bool, "add", "Enable addition") orelse false;
+    const subtract = b.option(bool, "subtract", "Enable subtraction") orelse false;
 
     const exe = b.addExecutable(.{
         .name = "example",
@@ -14,10 +13,12 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .target = target,
     });
-    exe.root_module.addImport("zigpkg", zigpkg.module(b, .{
+
+    const zigpkg = b.dependency("zigpkg", .{
         .add = add,
         .subtract = subtract,
-    }));
+    });
+    exe.root_module.addImport("zigpkg", zigpkg.module("zigpkg"));
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);
