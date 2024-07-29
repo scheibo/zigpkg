@@ -13,10 +13,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .target = target,
     });
-    const zigpkg = b.dependency("zigpkg", .{
-        .add = add,
-        .subtract = subtract,
-    });
+    const zigpkg = b.dependency("zigpkg", .{ .add = add, .subtract = subtract });
     exe.root_module.addImport("zigpkg", zigpkg.module("zigpkg"));
     b.installArtifact(exe);
 
