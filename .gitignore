@@ -25,3 +25,4 @@ dist/
 
 # Project
 examples/c/example
+examples/zig/zig-cache
