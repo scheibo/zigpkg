@@ -13,7 +13,6 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .target = target,
     });
-
     const zigpkg = b.dependency("zigpkg", .{
         .add = add,
         .subtract = subtract,
