@@ -3,15 +3,22 @@ const builtin = @import("builtin");
 
 pub const Options = struct { add: ?bool = null, subtract: ?bool = null };
 
+const name = "zigpkg";
+
 pub fn module(b: *std.Build, options: Options) *std.Build.Module {
-    const dirname = comptime std.fs.path.dirname(@src().file) orelse ".";
-    const build_options = b.addOptions();
-    build_options.addOption(?bool, "add", options.add);
-    build_options.addOption(?bool, "subtract", options.subtract);
-    return b.createModule(.{
-        .root_source_file = .{ .cwd_relative = dirname ++ "/src/lib/zigpkg.zig" },
-        .imports = &.{.{ .name = "zigpkg_options", .module = build_options.createModule() }},
-    });
+    var dep: *std.Build.Dependency = undefined;
+    if (options.add) |add| {
+        if (options.subtract) |subtract| {
+            dep = b.dependency(name, .{ .add = add, .subtract = subtract });
+        } else {
+            dep = b.dependency(name, .{ .add = add });
+        }
+    } else if (options.subtract) |subtract| {
+        dep = b.dependency(name, .{ .subtract = subtract });
+    } else {
+        dep = b.dependency(name, .{});
+    }
+    return dep.module(name);
 }
 
 pub fn build(b: *std.Build) !void {
@@ -45,7 +52,12 @@ pub fn build(b: *std.Build) !void {
     options.addOption(?bool, "add", add);
     options.addOption(?bool, "subtract", subtract);
 
-    const name = "zigpkg";
+    _ = b.addModule(name, .{
+        .root_source_file = b.path("src/lib/zigpkg.zig"),
+        .optimize = optimize,
+        .target = target,
+        .imports = &.{.{ .name = "zigpkg_options", .module = options.createModule() }},
+    });
 
     var c = false;
     if (node_headers) |headers| {
