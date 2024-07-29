@@ -1,8 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-pub const Options = struct { add: ?bool = null, subtract: ?bool = null };
-
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
