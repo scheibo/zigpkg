@@ -22,10 +22,6 @@ export function compute(n: number) {
   return ADDON.compute(n);
 }
 
-export function overflow() {
-  throw new Error('Result overflow');
-}
-
 // @test-only
 export function deinitialize() {
   loading = undefined;

@@ -1,5 +1,5 @@
 
-import {AddOn, Argument, overflow} from '.';
+import type {AddOn, Argument} from '.';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -40,12 +40,17 @@ export async function load(addon?: Argument): Promise<AddOn> {
     }
   } else {
     try {
-    const response = (addon as Promise<Response> | URL) instanceof Promise ? addon : fetch(addon);
-    wasm = (await WebAssembly.instantiateStreaming(response, {env: {overflow}})).instance;
+      const response = (addon as Promise<Response> | URL) instanceof Promise ? addon : fetch(addon);
+      wasm = (await WebAssembly.instantiateStreaming(response, {env: {overflow}})).instance;
     } catch (err) {
       if (!(err instanceof Error)) throw err;
       throw new Error(`Could not instanstiate WASM module!\n${err.message}`);
     }
   }
+
   return wasm.exports as AddOn;
+}
+
+function overflow() {
+  throw new Error('Result overflow');
 }

@@ -1,29 +1,38 @@
-import {AddOn, Argument, overflow} from '.';
 
-type WASM = {instance: {exports: AddOn}};
+import type {AddOn, Argument} from '.';
 
 export async function load(addon?: Argument): Promise<AddOn> {
-  console.log("hello from browser");
-  throw new Error();
+  if (typeof addon === 'string' && addon !== 'wasm') {
+    throw new Error('Unable to load native addons in the browser');
+  }
 
-  // if (typeof addon === 'object' || addon === 'wasm') {
-  //   try {
-  //     if ()      const buf = fs.readFileSync(path.join(ROOT, 'build', 'lib', 'zigpkg.wasm'));
-  //     const wasm = await WebAssembly.instantiate(buf, {env: {overflow}}) as unknown as WASM;
-  //     ADDON = wasm.instance.exports;
-  //   } catch (err) {
-  //     const message = addon ? 'Unable to find addons' : 'WASM addon not found';
-  //     throw new Error(`${message} - did you run \`npx install-zigpkg\`?`);
-  //   }
-  // } else {
-  //   try {
-  //     ADDON = require(path.join(ROOT, 'build', 'lib', 'zigpkg.node')) as AddOn;
-  //     return;
-  //   } catch {
-  //     if (addon == 'node') {
-  //       throw new Error('Native addon not found - did you run `npx install-zigpkg`?');
-  //     }
-  //   }
-  // }
+  let wasm: WebAssembly.Instance;
+  if (addon instanceof WebAssembly.Module) {
+    try {
+      wasm = (await WebAssembly.instantiate(addon, {env: {overflow}}));
+    } catch (err) {
+      if (!(err instanceof Error)) throw err;
+      throw new Error(`Could not instanstiate WASM module!\n${err.message}`);
+    }
+  } else {
+    try {
+      const response = !addon || addon === 'wasm' ? fetch('zigpkg.wasm')
+        : (addon as Promise<Response> | URL) instanceof URL ? fetch(addon) : addon;
+      wasm = (await WebAssembly.instantiateStreaming(response, {env: {overflow}})).instance;
+    } catch (err) {
+      if (!(err instanceof Error)) throw err;
+      const message = !addon || addon === 'wasm'
+        ? 'WASM addon not found - did you run `npx install-zigpkg`?'
+        : (addon as Promise<Response> | URL) instanceof URL
+          ? `Could not fetch WASM module from '${(addon as URL).href}'`
+          : 'Could not instanstiate WASM module!';
+      throw new Error(`${message}\n${err.message}`);
+    }
+  }
 
+  return wasm.exports as AddOn;
+}
+
+function overflow() {
+  throw new Error('Result overflow');
 }

@@ -4,11 +4,11 @@
   },
   "devDependencies": {
     "esbuild": "^0.23.1",
+    "parcel-reporter-static-files-copy": "^1.5.3",
     "parcel": "^2.12.0",
     "typescript": "^5.5.4",
-    "vite": "^5.4.3",
-    "vite-plugin-commonjs": "^0.10.1"
-
+    "vite-plugin-commonjs": "^0.10.1",
+    "vite": "^5.4.3"
   },
   "scripts": {
     "prestart": "tsc -p .",
@@ -21,5 +21,8 @@
     "process": {
       "global": "process"
     }
+  },
+  "staticFiles": {
+    "staticPath": "node_modules/zigpkg/build/lib/zigpkg.wasm"
   }
 }
