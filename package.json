@@ -7,16 +7,25 @@
   "sideEffects": false,
   "main": "build/pkg/index.js",
   "types": "build/pkg/index.d.ts",
+  "browser": {
+    "./build/pkg/node.js": "./build/pkg/browser.js"
+  },
   "files": [
     "build.zig",
+    "build/pkg/browser.d.ts",
+    "build/pkg/browser.js.map",
+    "build/pkg/browser.js",
+    "build/pkg/index.d.ts",
+    "build/pkg/index.js.map",
+    "build/pkg/index.js",
+    "build/pkg/node.d.ts",
+    "build/pkg/node.js.map",
+    "build/pkg/node.js",
     "src/bin/install-zigpkg",
     "src/lib/node.zig",
-    "src/lib/wasm.zig",
     "src/lib/options.zig",
-    "src/lib/zigpkg.zig",
-    "build/pkg/index.d.ts",
-    "build/pkg/index.js",
-    "build/pkg/index.js.map"
+    "src/lib/wasm.zig",
+    "src/lib/zigpkg.zig"
   ],
   "engines": {"node": ">=16.0.0"},
   "bin": {"install-zigpkg": "src/bin/install-zigpkg"},

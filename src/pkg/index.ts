@@ -1,41 +1,20 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import {load} from './node';
 
-type AddOn = {compute(this: void, n: number): number};
-type WASM = {instance: {exports: AddOn}};
+export type Argument = string | URL | WebAssembly.Module | Promise<Response>;
+export type AddOn = {compute(this: void, n: number): number};
+
 let ADDON: AddOn | undefined = undefined;
-let loading: Promise<void> | undefined = undefined;
+let loading: Promise<AddOn> | undefined = undefined;
 
-const ROOT = path.join(__dirname, '..', '..');
-
-export async function initialize(addon?: 'node' | 'wasm') {
+export async function initialize(addon?: Argument) {
   if (loading) throw new Error('Cannot call initialize more than once');
   loading = load(addon);
-  loading.catch(() => {
+  loading.then(a => {
+    ADDON = a;
+  }).catch(() => {
     loading = undefined;
   });
-  return loading;
-}
-
-async function load(addon?: 'node' | 'wasm') {
-  if (!addon || addon == 'node') {
-    try {
-      ADDON = require(path.join(ROOT, 'build', 'lib', 'zigpkg.node')) as AddOn;
-      return;
-    } catch {
-      if (addon == 'node') {
-        throw new Error('Native addon not found - did you run `npx install-zigpkg`?');
-      }
-    }
-  }
-  try {
-    const buf = fs.readFileSync(path.join(ROOT, 'build', 'lib', 'zigpkg.wasm'));
-    const wasm =  await WebAssembly.instantiate(buf, {env: {overflow}}) as unknown as WASM
-    ADDON = wasm.instance.exports;
-  } catch (err) {
-    const message = addon ? 'Unable to find addons' : 'WASM addon not found';
-    throw new Error(`${message} - did you run \`npx install-zigpkg\`?`);
-  }
+  return loading?.then(() => {});
 }
 
 export function compute(n: number) {
@@ -43,11 +22,11 @@ export function compute(n: number) {
   return ADDON.compute(n);
 }
 
-function overflow() {
+export function overflow() {
   throw new Error('Result overflow');
 }
 
-// test only
+// @test-only
 export function deinitialize() {
   loading = undefined;
 }

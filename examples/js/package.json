@@ -3,14 +3,23 @@
     "zigpkg": "file:../.."
   },
   "devDependencies": {
+    "esbuild": "^0.23.1",
     "parcel": "^2.12.0",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.13"
+    "typescript": "^5.5.4",
+    "vite": "^5.4.3",
+    "vite-plugin-commonjs": "^0.10.1"
+
   },
   "scripts": {
     "prestart": "tsc -p .",
     "start": "node build/example.js",
-    "start:parcel": "parcel index.html",
+    "start:esbuild": "esbuild --bundle example.ts --outfile=dist/esbuild.js",
+    "start:parcel": "parcel --no-autoinstall index.html",
     "start:vite": "vite"
+  },
+  "alias": {
+    "process": {
+      "global": "process"
+    }
   }
 }
