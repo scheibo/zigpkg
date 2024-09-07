@@ -1,8 +1,19 @@
+import * as fs from 'fs';
+
 import * as zigpkg from '.';
+import {NODE, WASM} from './node';
+
+const options = {
+  fallback: undefined,
+  node: 'node',
+  wasm: 'wasm',
+  path: NODE,
+  module: new WebAssembly.Module(fs.readFileSync(WASM)),
+};
 
 describe('zigpkg', () => {
-  for (const addon of [undefined, 'node', 'wasm'] as const) {
-    describe(addon || 'fallback', () => {
+  for (const [name, addon] of Object.entries(options)) {
+    describe(name, () => {
       beforeEach(() => zigpkg.initialize(addon));
       afterEach(zigpkg.deinitialize);
       test('compute', () => {
