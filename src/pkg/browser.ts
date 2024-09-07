@@ -3,7 +3,7 @@ import type {AddOn, Argument} from '.';
 
 export async function load(addon?: Argument): Promise<AddOn> {
   if (typeof addon === 'string' && addon !== 'wasm') {
-    throw new Error('Unable to load native addons in the browser');
+    throw new Error('Unable to load native addons in the browser!');
   }
 
   let wasm: WebAssembly.Instance;
@@ -12,7 +12,7 @@ export async function load(addon?: Argument): Promise<AddOn> {
       wasm = (await WebAssembly.instantiate(addon, {env: {overflow}}));
     } catch (err) {
       if (!(err instanceof Error)) throw err;
-      throw new Error(`Could not instanstiate WASM module!\n${err.message}`);
+      throw new Error(`Could not instantiate WASM module!\n${err.message}`);
     }
   } else {
     try {
@@ -25,7 +25,7 @@ export async function load(addon?: Argument): Promise<AddOn> {
         ? 'WASM addon not found - did you run `npx install-zigpkg`?'
         : (addon as Promise<Response> | URL) instanceof URL
           ? `Could not fetch WASM module from '${(addon as URL).href}'`
-          : 'Could not instanstiate WASM module!';
+          : 'Could not instantiate WASM module!';
       throw new Error(`${message}\n${err.message}`);
     }
   }

@@ -1,8 +1,7 @@
-
-import type {AddOn, Argument} from '.';
-
 import * as fs from 'fs';
 import * as path from 'path';
+
+import type {AddOn, Argument} from '.';
 
 const ROOT = path.join(__dirname, '..', '..');
 
@@ -11,14 +10,14 @@ export const WASM = path.join(ROOT, 'build', 'lib', 'zigpkg.wasm');
 export const NODE = path.join(ROOT, 'build', 'lib', 'zigpkg.node')
 
 export async function load(addon?: Argument): Promise<AddOn> {
-  if (addon == undefined || typeof addon === 'string' && addon !== 'wasm') {
+  if (addon === undefined || typeof addon === 'string' && addon !== 'wasm') {
     try {
-      return require(!addon || addon === 'node' ? NODE: addon) as AddOn;
+      return require(!addon || addon === 'node' ? NODE : addon) as AddOn;
     } catch (err) {
       if (!(err instanceof Error)) throw err;
       const message = addon && addon !== 'node'
         ? `Unable to load native addon: '${addon}'`
-        : 'Native addon not found - did you run `npx install-zigpkg`?'
+        : 'Native addon not found - did you run `npx install-zigpkg`?';
       throw new Error(`${message}\n${err.message}`);
     }
   }
@@ -36,7 +35,7 @@ export async function load(addon?: Argument): Promise<AddOn> {
       wasm = (await WebAssembly.instantiate(addon, {env: {overflow}}));
     } catch (err) {
       if (!(err instanceof Error)) throw err;
-      throw new Error(`Could not instanstiate WASM module!\n${err.message}`);
+      throw new Error(`Could not instantiate WASM module!\n${err.message}`);
     }
   } else {
     try {
@@ -44,7 +43,7 @@ export async function load(addon?: Argument): Promise<AddOn> {
       wasm = (await WebAssembly.instantiateStreaming(response, {env: {overflow}})).instance;
     } catch (err) {
       if (!(err instanceof Error)) throw err;
-      throw new Error(`Could not instanstiate WASM module!\n${err.message}`);
+      throw new Error(`Could not instantiate WASM module!\n${err.message}`);
     }
   }
 
