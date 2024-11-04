@@ -72,7 +72,7 @@ pub fn build(b: *std.Build) !void {
         // rename the file ourself in install-zig-engine
         b.installArtifact(lib);
     } else if (wasm) {
-        const opts = .{
+        const opts: std.Build.ExecutableOptions = .{
             .name = name,
             .root_source_file = b.path("src/lib/wasm.zig"),
             .optimize = switch (optimize) {
