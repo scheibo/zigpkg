@@ -20,7 +20,7 @@ jobs:
         options: ['', '-Dadd', '-Dsubtract', '-Dadd -Dsubtract']
         # Generally we should pin our version to something stable and add all
         # major support here as well as run against master if possible
-        zig: [0.13.0, master]
+        zig: [0.14.0, master]
     runs-on: ${{matrix.os}}
     steps:
       # The scheduled canary run of this workflow should only run against master

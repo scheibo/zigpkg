@@ -30,17 +30,17 @@
   "engines": {"node": ">=16.0.0"},
   "bin": {"install-zigpkg": "src/bin/install-zigpkg"},
   "devDependencies": {
-    "@babel/preset-env": "^7.24.7",
-    "@babel/preset-typescript": "^7.24.7",
-    "@types/jest": "^29.5.12",
-    "@types/node": "^20.14.2",
-    "@typescript-eslint/eslint-plugin": "^7.13.0",
-    "@typescript-eslint/parser": "^7.13.0",
-    "binaryen": "^117.0.0",
+    "@babel/preset-env": "^7.26.9",
+    "@babel/preset-typescript": "^7.26.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.9",
+    "@typescript-eslint/eslint-plugin": "^8.26.0",
+    "@typescript-eslint/parser": "^8.26.0",
+    "binaryen": "^122.0.0",
     "eslint": "<=8",
-    "eslint-plugin-jest": "^28.6.0",
+    "eslint-plugin-jest": "^28.11.0",
     "jest": "^29.7.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.8.2"
   },
   "scripts": {
     "lint": "eslint --cache src --ext ts,js && eslint src/bin/install-zigpkg",
@@ -76,8 +76,9 @@
         "plugin:@typescript-eslint/recommended-requiring-type-checking"
       ],
       "rules": {
-        "@typescript-eslint/no-var-requires": "off",
-        "@typescript-eslint/no-non-null-assertion": "off"
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/no-require-imports": "off",
+        "@typescript-eslint/no-var-requires": "off"
       }
     }, {
       "files": ["**/*.test.ts"],
