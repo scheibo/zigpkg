@@ -14,18 +14,34 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     // Expect that we have been given a decimal number as our only argument
-    const err = std.io.getStdErr().writer();
     if (args.len != 2) {
-        try err.print("Usage: {s} <num>\n", .{args[0]});
+        try err("Usage: {s} <num>\n", .{args[0]});
         std.process.exit(1);
     }
 
     const num = std.fmt.parseUnsigned(u32, args[1], 10) catch {
-        try err.print("Invalid number: {s}\n", .{args[1]});
-        try err.print("Usage: {s} <num>\n", .{args[0]});
+        try err("Invalid number: {s}\n", .{args[1]});
+        try err("Usage: {s} <num>\n", .{args[0]});
         std.process.exit(1);
     };
 
-    const out = std.io.getStdOut().writer();
-    try out.print("{d}\n", .{try zigpkg.compute(num)});
+    try out("{d}\n", .{try zigpkg.compute(num)});
+}
+
+fn err(comptime fmt: []const u8, args: anytype) !void {
+    if (@hasDecl(std.io, "getStdErr")) {
+        try std.io.getStdErr().writer().print(fmt, args);
+    } else {
+        var writer = std.fs.File.stderr().writer(&.{});
+        try writer.interface.print(fmt, args);
+    }
+}
+
+fn out(comptime fmt: []const u8, args: anytype) !void {
+    if (@hasDecl(std.io, "getStdOut")) {
+        try std.io.getStdOut().writer().print(fmt, args);
+    } else {
+        var writer = std.fs.File.stdout().writer(&.{});
+        try writer.interface.print(fmt, args);
+    }
 }

@@ -30,17 +30,17 @@
   "engines": {"node": ">=16.0.0"},
   "bin": {"install-zigpkg": "src/bin/install-zigpkg"},
   "devDependencies": {
-    "@babel/preset-env": "^7.26.9",
-    "@babel/preset-typescript": "^7.26.0",
-    "@types/jest": "^29.5.14",
-    "@types/node": "^22.13.9",
-    "@typescript-eslint/eslint-plugin": "^8.26.0",
-    "@typescript-eslint/parser": "^8.26.0",
-    "binaryen": "^122.0.0",
+    "@babel/preset-env": "^7.28.0",
+    "@babel/preset-typescript": "^7.27.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.14",
+    "@typescript-eslint/eslint-plugin": "^8.37.0",
+    "@typescript-eslint/parser": "^8.37.0",
+    "binaryen": "^123.0.0",
     "eslint": "<=8",
-    "eslint-plugin-jest": "^28.11.0",
-    "jest": "^29.7.0",
-    "typescript": "^5.8.2"
+    "eslint-plugin-jest": "^29.0.1",
+    "jest": "^30.0.4",
+    "typescript": "^5.8.3"
   },
   "scripts": {
     "lint": "eslint --cache src --ext ts,js && eslint src/bin/install-zigpkg",

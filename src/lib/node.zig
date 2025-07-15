@@ -25,7 +25,12 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     return exports;
 }
 
-fn compute(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+const C = if (@hasDecl(std.builtin.CallingConvention, "c"))
+    std.builtin.CallingConvention.c
+else
+    std.builtin.CallingConvention.C;
+
+fn compute(env: c.napi_env, info: c.napi_callback_info) callconv(C) c.napi_value {
     var argc: usize = 1;
     var argv: [1]c.napi_value = undefined;
     if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {

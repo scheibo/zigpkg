@@ -43,13 +43,16 @@ pub fn build(b: *std.Build) !void {
     var c = false;
     if (node_headers) |headers| {
         const addon = b.fmt("{s}.node", .{name});
-        const lib = b.addSharedLibrary(.{
+        const lib = b.addLibrary(.{
+            .linkage = .dynamic,
             .name = addon,
-            .root_source_file = b.path("src/lib/node.zig"),
-            .optimize = optimize,
-            .target = target,
-            .strip = strip,
-            .pic = pic,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("src/lib/node.zig"),
+                .optimize = optimize,
+                .target = target,
+                .strip = strip,
+                .pic = pic,
+            }),
         });
         lib.root_module.addOptions("zigpkg_options", options);
         lib.addSystemIncludePath(b.path(headers));
@@ -57,7 +60,13 @@ pub fn build(b: *std.Build) !void {
         if (node_import_lib) |il| {
             lib.addObjectFile(b.path(il));
         } else if (target.result.os.tag == .windows) {
-            try std.io.getStdErr().writeAll("Must provide --node-import-library path on Windows\n");
+            const msg = "Must provide --node-import-library path on Windows\n";
+            if (@hasDecl(std.fs.File, "stderr")) {
+                var writer = std.fs.File.stderr().writer(&.{});
+                try writer.interface.writeAll(msg);
+            } else {
+                try std.io.getStdErr().writeAll(msg);
+            }
             std.process.exit(1);
         }
         lib.linker_allow_shlib_undefined = true;
@@ -74,14 +83,16 @@ pub fn build(b: *std.Build) !void {
     } else if (wasm) {
         const opts: std.Build.ExecutableOptions = .{
             .name = name,
-            .root_source_file = b.path("src/lib/wasm.zig"),
-            .optimize = switch (optimize) {
-                .ReleaseFast, .ReleaseSafe => .ReleaseSmall,
-                else => optimize,
-            },
-            .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
-            .strip = strip,
-            .pic = pic,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("src/lib/wasm.zig"),
+                .optimize = switch (optimize) {
+                    .ReleaseFast, .ReleaseSafe => .ReleaseSmall,
+                    else => optimize,
+                },
+                .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
+                .strip = strip,
+                .pic = pic,
+            }),
         };
         const lib = b.addExecutable(opts);
         lib.entry = .disabled;
@@ -105,14 +116,17 @@ pub fn build(b: *std.Build) !void {
             }).step);
         }
     } else if (dynamic) {
-        const lib = b.addSharedLibrary(.{
-            .name = name,
-            .root_source_file = b.path("src/lib/c.zig"),
+        const lib = b.addLibrary(.{
+            .linkage = .dynamic,
             .version = try std.SemanticVersion.parse(version),
-            .optimize = optimize,
-            .target = target,
-            .strip = strip,
-            .pic = pic,
+            .name = name,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("src/lib/c.zig"),
+                .optimize = optimize,
+                .target = target,
+                .strip = strip,
+                .pic = pic,
+            }),
         });
         lib.root_module.addOptions("zigpkg_options", options);
         lib.addIncludePath(b.path("src/include"));
@@ -120,13 +134,16 @@ pub fn build(b: *std.Build) !void {
         b.installArtifact(lib);
         c = true;
     } else {
-        const lib = b.addStaticLibrary(.{
+        const lib = b.addLibrary(.{
+            .linkage = .static,
             .name = name,
-            .root_source_file = b.path("src/lib/c.zig"),
-            .optimize = optimize,
-            .target = target,
-            .strip = strip,
-            .pic = pic,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("src/lib/c.zig"),
+                .optimize = optimize,
+                .target = target,
+                .strip = strip,
+                .pic = pic,
+            }),
         });
         lib.root_module.addOptions("zigpkg_options", options);
         lib.addIncludePath(b.path("src/include"));
@@ -153,8 +170,7 @@ pub fn build(b: *std.Build) !void {
         const pkgconfig_file = try std.fs.cwd().createFile(file, .{});
 
         const dirname = comptime std.fs.path.dirname(@src().file) orelse ".";
-        const writer = pkgconfig_file.writer();
-        try writer.print(
+        try print(&pkgconfig_file,
             \\prefix={0s}/{1s}
             \\includedir=${{prefix}}/include
             \\libdir=${{prefix}}/lib
@@ -177,13 +193,15 @@ pub fn build(b: *std.Build) !void {
     const test_filter = b.option([]const u8, "test-filter", "Skip tests that do not match filter");
 
     const tests = b.addTest(.{
-        .root_source_file = b.path(test_file),
-        .optimize = optimize,
-        .target = target,
-        .filter = test_filter,
-        .single_threaded = true,
-        .strip = strip,
-        .pic = pic,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path(test_file),
+            .optimize = optimize,
+            .target = target,
+            .single_threaded = true,
+            .strip = strip,
+            .pic = pic,
+        }),
+        .filters = if (test_filter) |filter| &.{filter} else &.{},
     });
     tests.root_module.addOptions("zigpkg_options", options);
     maybeStrip(b, tests, &tests.step, strip, cmd);
@@ -210,4 +228,13 @@ fn maybeStrip(
     const sh = b.addSystemCommand(&[_][]const u8{ cmd.?, if (mac) "-x" else "-s" });
     sh.addArtifactArg(artifact);
     step.dependOn(&sh.step);
+}
+
+fn print(file: *const std.fs.File, comptime fmt: []const u8, args: anytype) !void {
+    if (@hasField(std.fs.File.Writer, "interface")) {
+        var writer = file.writer(&.{});
+        try writer.interface.print(fmt, args);
+    } else {
+        try file.writer().print(fmt, args);
+    }
 }
