@@ -1,4 +1,5 @@
 const std = @import("std");
+const io = if (@hasDecl(std, "io")) std.io else std.Io;
 const zigpkg = @import("zigpkg");
 
 // In Zig the options may be set through a root declaration instead
@@ -29,8 +30,8 @@ pub fn main() !void {
 }
 
 fn err(comptime fmt: []const u8, args: anytype) !void {
-    if (@hasDecl(std.io, "getStdErr")) {
-        try std.io.getStdErr().writer().print(fmt, args);
+    if (@hasDecl(io, "getStdErr")) {
+        try io.getStdErr().writer().print(fmt, args);
     } else {
         var writer = std.fs.File.stderr().writer(&.{});
         try writer.interface.print(fmt, args);
@@ -38,8 +39,8 @@ fn err(comptime fmt: []const u8, args: anytype) !void {
 }
 
 fn out(comptime fmt: []const u8, args: anytype) !void {
-    if (@hasDecl(std.io, "getStdOut")) {
-        try std.io.getStdOut().writer().print(fmt, args);
+    if (@hasDecl(io, "getStdOut")) {
+        try io.getStdOut().writer().print(fmt, args);
     } else {
         var writer = std.fs.File.stdout().writer(&.{});
         try writer.interface.print(fmt, args);
