@@ -372,7 +372,7 @@ const downloadImportLib = async () => {
       try {
         const actual = path.join('build', 'lib', `${prefix}zigpkg.node.${ext}`);
         fs.renameSync(actual, artifact);
-      } catch (err) {
+      } catch {
         // ziglang/zig#19743 changed this path
         const actual = path.join('build', 'bin', `${prefix}zigpkg.node.${ext}`);
         fs.renameSync(actual, artifact);
