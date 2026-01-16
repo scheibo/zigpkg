@@ -1,13 +1,6 @@
 const std = @import("std");
 const zigpkg = @import("./zigpkg.zig");
 
-const Int = if (@hasField(std.builtin.Type, "int")) .int else .Int;
-const Float = if (@hasField(std.builtin.Type, "float")) .float else .Float;
-const ComptimeInt =
-    if (@hasField(std.builtin.Type, "comptime_int")) .comptime_int else .ComptimeInt;
-const ComptimeFloat =
-    if (@hasField(std.builtin.Type, "comptime_float")) .comptime_float else .ComptimeFloat;
-
 const c = @cImport({
     @cDefine("NAPI_VERSION", "8");
     @cInclude("node_api.h");
@@ -25,12 +18,7 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     return exports;
 }
 
-const C = if (@hasDecl(std.builtin.CallingConvention, "c"))
-    std.builtin.CallingConvention.c
-else
-    std.builtin.CallingConvention.C;
-
-fn compute(env: c.napi_env, info: c.napi_callback_info) callconv(C) c.napi_value {
+fn compute(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     var argc: usize = 1;
     var argv: [1]c.napi_value = undefined;
     if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
@@ -111,7 +99,7 @@ const Number = struct {
         var result: c.napi_value = undefined;
 
         switch (@typeInfo(T)) {
-            Int => |info| switch (info.bits) {
+            .int => |info| switch (info.bits) {
                 0...32 => switch (info.signedness) {
                     .signed => {
                         if (c.napi_create_int32(env, @as(i32, value), &result) != c.napi_ok) {
@@ -131,7 +119,7 @@ const Number = struct {
                 },
                 else => @compileError("int can't be represented as JS number"),
             },
-            ComptimeInt => {
+            .comptime_int => {
                 if (value >= std.math.minInt(i32) and value <= std.math.maxInt(i32)) {
                     if (c.napi_create_int32(env, @as(i32, value), &result) != c.napi_ok) {
                         return Error.throw(env, "Failed to create int32 " ++ name);
@@ -144,7 +132,7 @@ const Number = struct {
                     @compileError("comptime_int can't be represented as JS number");
                 }
             },
-            Float, ComptimeFloat => {
+            .float, .comptime_float => {
                 if (c.napi_create_double(env, @floatCast(value), &result) != c.napi_ok) {
                     return Error.throw(env, "Failed to create double " ++ name);
                 }
@@ -157,7 +145,7 @@ const Number = struct {
 
     fn get(env: c.napi_env, value: c.napi_value, comptime name: [:0]const u8, comptime T: type) !T {
         switch (@typeInfo(T)) {
-            Float => {
+            .float => {
                 var result: f64 = undefined;
                 return switch (c.napi_get_value_double(env, value, &result)) {
                     c.napi_ok => @floatCast(result),
@@ -165,7 +153,7 @@ const Number = struct {
                     else => unreachable,
                 };
             },
-            Int => |info| switch (info.bits) {
+            .int => |info| switch (info.bits) {
                 0...32 => switch (info.signedness) {
                     .signed => {
                         var result: i32 = undefined;

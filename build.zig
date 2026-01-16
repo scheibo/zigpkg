@@ -55,18 +55,14 @@ pub fn build(b: *std.Build) !void {
             }),
         });
         lib.root_module.addOptions("zigpkg_options", options);
-        lib.addSystemIncludePath(b.path(headers));
-        lib.linkLibC();
+        lib.root_module.addSystemIncludePath(b.path(headers));
+        lib.root_module.link_libc = true;
         if (node_import_lib) |il| {
-            lib.addObjectFile(b.path(il));
+            lib.root_module.addObjectFile(b.path(il));
         } else if (target.result.os.tag == .windows) {
             const msg = "Must provide --node-import-library path on Windows\n";
-            if (@hasDecl(std.fs.File, "stderr")) {
-                var writer = std.fs.File.stderr().writer(&.{});
-                try writer.interface.writeAll(msg);
-            } else {
-                try std.io.getStdErr().writeAll(msg);
-            }
+            var writer = std.Io.File.stderr().writer(b.graph.io, &.{});
+            try writer.interface.writeAll(msg);
             std.process.exit(1);
         }
         lib.linker_allow_shlib_undefined = true;
@@ -129,7 +125,7 @@ pub fn build(b: *std.Build) !void {
             }),
         });
         lib.root_module.addOptions("zigpkg_options", options);
-        lib.addIncludePath(b.path("src/include"));
+        lib.root_module.addIncludePath(b.path("src/include"));
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
         b.installArtifact(lib);
         c = true;
@@ -146,7 +142,7 @@ pub fn build(b: *std.Build) !void {
             }),
         });
         lib.root_module.addOptions("zigpkg_options", options);
-        lib.addIncludePath(b.path("src/include"));
+        lib.root_module.addIncludePath(b.path("src/include"));
         lib.bundle_compiler_rt = true;
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
         b.installArtifact(lib);
@@ -162,15 +158,20 @@ pub fn build(b: *std.Build) !void {
         b.getInstallStep().dependOn(&header.step);
 
         const pc = b.fmt("lib{s}.pc", .{name});
-        const file = try std.fs.path.relative(
+        const cwd = try std.process.getCwdAlloc(b.allocator);
+        const file = try std.Io.Dir.path.relative(
             b.allocator,
             try std.process.getCwdAlloc(b.allocator),
+            &b.graph.environ_map,
+            cwd,
             try b.cache_root.join(b.allocator, &.{pc}),
         );
-        const pkgconfig_file = try std.fs.cwd().createFile(file, .{});
+        const pkgconfig_file = try std.Io.Dir.cwd().createFile(b.graph.io, file, .{});
+        defer pkgconfig_file.close(b.graph.io);
 
-        const dirname = comptime std.fs.path.dirname(@src().file) orelse ".";
-        try print(&pkgconfig_file,
+        const dirname = comptime std.Io.Dir.path.dirname(@src().file) orelse ".";
+        var writer = pkgconfig_file.writer(b.graph.io, &.{});
+        try writer.interface.print(
             \\prefix={0s}/{1s}
             \\includedir=${{prefix}}/include
             \\libdir=${{prefix}}/lib
@@ -182,7 +183,6 @@ pub fn build(b: *std.Build) !void {
             \\Cflags: -I${{includedir}}
             \\Libs: -L${{libdir}} -l{2s}
         , .{ dirname, b.install_path, name, repository.next().?, description, version });
-        defer pkgconfig_file.close();
 
         b.installFile(file, b.fmt("share/pkgconfig/{s}", .{pc}));
     }
@@ -228,13 +228,4 @@ fn maybeStrip(
     const sh = b.addSystemCommand(&[_][]const u8{ cmd.?, if (mac) "-x" else "-s" });
     sh.addArtifactArg(artifact);
     step.dependOn(&sh.step);
-}
-
-fn print(file: *const std.fs.File, comptime fmt: []const u8, args: anytype) !void {
-    if (@hasField(std.fs.File.Writer, "interface")) {
-        var writer = file.writer(&.{});
-        try writer.interface.print(fmt, args);
-    } else {
-        try file.writer().print(fmt, args);
-    }
 }
