@@ -158,10 +158,10 @@ pub fn build(b: *std.Build) !void {
         b.getInstallStep().dependOn(&header.step);
 
         const pc = b.fmt("lib{s}.pc", .{name});
-        const cwd = try std.process.getCwdAlloc(b.allocator);
+        const cwd = try std.process.currentPathAlloc(b.graph.io, b.allocator);
         const file = try std.Io.Dir.path.relative(
             b.allocator,
-            try std.process.getCwdAlloc(b.allocator),
+            cwd,
             &b.graph.environ_map,
             cwd,
             try b.cache_root.join(b.allocator, &.{pc}),
