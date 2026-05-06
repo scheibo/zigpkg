@@ -42,6 +42,12 @@ pub fn build(b: *std.Build) !void {
 
     var c = false;
     if (node_headers) |headers| {
+        const translate_c = b.addTranslateC(.{
+            .root_source_file = b.path("src/lib/napi.h"),
+            .target = target,
+            .optimize = optimize,
+        });
+        translate_c.addSystemIncludePath(b.path(headers));
         const addon = b.fmt("{s}.node", .{name});
         const lib = b.addLibrary(.{
             .linkage = .dynamic,
@@ -55,7 +61,7 @@ pub fn build(b: *std.Build) !void {
             }),
         });
         lib.root_module.addOptions("zigpkg_options", options);
-        lib.root_module.addSystemIncludePath(b.path(headers));
+        lib.root_module.addImport("napi", translate_c.createModule());
         lib.root_module.link_libc = true;
         if (node_import_lib) |il| {
             lib.root_module.addObjectFile(b.path(il));
@@ -143,9 +149,13 @@ pub fn build(b: *std.Build) !void {
         });
         lib.root_module.addOptions("zigpkg_options", options);
         lib.root_module.addIncludePath(b.path("src/include"));
-        lib.bundle_compiler_rt = true;
+        if (target.result.os.tag != .macos) {
+            lib.bundle_compiler_rt = true;
+        }
         maybeStrip(b, lib, b.getInstallStep(), strip, cmd);
-        b.installArtifact(lib);
+        const install = b.addInstallArtifact(lib, .{});
+        b.getInstallStep().dependOn(&install.step);
+        maybeRanlib(b, lib, &install.step);
         c = true;
     }
 
@@ -228,4 +238,19 @@ fn maybeStrip(
     const sh = b.addSystemCommand(&[_][]const u8{ cmd.?, if (mac) "-x" else "-s" });
     sh.addArtifactArg(artifact);
     step.dependOn(&sh.step);
+}
+
+fn maybeRanlib(
+    b: *std.Build,
+    artifact: *std.Build.Step.Compile,
+    install_step: *std.Build.Step,
+) void {
+    if (builtin.os.tag != .macos) return;
+    if (artifact.linkage != .static) return;
+
+    const ranlib = b.findProgram(&[_][]const u8{"ranlib"}, &[_][]const u8{}) catch return;
+    const sh = b.addSystemCommand(&[_][]const u8{ranlib});
+    sh.addArg(b.getInstallPath(.{ .lib = {} }, b.fmt("lib{s}.a", .{artifact.name})));
+    sh.step.dependOn(install_step);
+    b.getInstallStep().dependOn(&sh.step);
 }

@@ -9,8 +9,12 @@ default: check
 zig-build:
 	zig build --summary all -Dadd -p build
 
+.PHONY: js-install
+js-install: node_modules
+	node src/bin/install-zigpkg
+
 .PHONY: js-build
-js-build: node_modules
+js-build: js-install
 	npm run compile
 
 .PHONY: build

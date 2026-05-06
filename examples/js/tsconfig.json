@@ -4,5 +4,7 @@
     "outDir": "build",
     "rootDir": ".",
     "strict": true,
+    "lib": ["es2022", "dom"],
+    "types": ["node"]
   }
 }

@@ -1,10 +1,6 @@
+const c = @import("napi");
 const std = @import("std");
 const zigpkg = @import("./zigpkg.zig");
-
-const c = @cImport({
-    @cDefine("NAPI_VERSION", "8");
-    @cInclude("node_api.h");
-});
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
     const opts = options(env, "options") catch return null;

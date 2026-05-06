@@ -22,6 +22,7 @@
     "build/pkg/node.js.map",
     "build/pkg/node.js",
     "src/bin/install-zigpkg",
+    "src/lib/napi.h",
     "src/lib/node.zig",
     "src/lib/options.zig",
     "src/lib/wasm.zig",
@@ -30,18 +31,18 @@
   "engines": {"node": ">=16.0.0"},
   "bin": {"install-zigpkg": "src/bin/install-zigpkg"},
   "devDependencies": {
-    "@babel/preset-env": "^7.28.6",
+    "@babel/preset-env": "^7.29.5",
     "@babel/preset-typescript": "^7.28.5",
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^10.0.1",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.0.6",
-    "binaryen": "^125.0.0",
-    "eslint": "^9.39.2",
-    "eslint-plugin-jest": "^29.12.1",
-    "globals": "^17.0.0",
-    "jest": "^30.2.0",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.53.0"
+    "@types/node": "^25.6.0",
+    "binaryen": "^129.0.0",
+    "eslint": "^10.3.0",
+    "eslint-plugin-jest": "^29.15.2",
+    "globals": "^17.6.0",
+    "jest": "^30.3.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.2"
   },
   "scripts": {
     "lint": "eslint --cache src",
@@ -59,34 +60,5 @@
   },
   "babel": {
     "presets": ["@babel/preset-typescript",["@babel/preset-env", {"targets": {"node": "current"}}]]
-  },
-  "eslintConfig": {
-    "extends": "eslint:recommended",
-    "parserOptions": {"ecmaVersion": 11},
-    "ignorePatterns": ["dist/", "node_modules/", "examples/zig", "build/"],
-    "env": {"es6": true, "node": true, "browser": true},
-    "rules": {"no-empty": [2, {"allowEmptyCatch": true}]},
-    "overrides": [{
-      "files": ["**/*.ts"],
-      "parser": "@typescript-eslint/parser",
-      "parserOptions": {"project": ["./tsconfig.json", "./examples/js/tsconfig.json"]},
-      "plugins": ["@typescript-eslint"],
-      "extends": [
-        "plugin:@typescript-eslint/eslint-recommended",
-        "plugin:@typescript-eslint/recommended",
-        "plugin:@typescript-eslint/recommended-requiring-type-checking"
-      ],
-      "rules": {
-        "@typescript-eslint/no-non-null-assertion": "off",
-        "@typescript-eslint/no-require-imports": "off",
-        "@typescript-eslint/no-var-requires": "off"
-      }
-    }, {
-      "files": ["**/*.test.ts"],
-      "extends": ["plugin:jest/recommended", "plugin:jest/style"],
-      "plugins": ["jest"],
-      "env": {"jest/globals": true},
-      "rules": {"jest/valid-title": "off"}
-    }]
   }
 }
