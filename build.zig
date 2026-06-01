@@ -15,7 +15,10 @@ pub fn build(b: *std.Build) !void {
     const strip = b.option(bool, "strip", "Strip debugging symbols from binary");
     const pic = b.option(bool, "pic", "Force position independent code");
 
-    const cmd = b.findProgram(&[_][]const u8{"strip"}, &[_][]const u8{}) catch null;
+    const cmd = if (@hasDecl(std.Build, "FindProgramOptions"))
+        b.findProgram(.{ .names = &.{"strip"} })
+    else
+        b.findProgram(&[_][]const u8{"strip"}, &[_][]const u8{}) catch null;
 
     const json = @embedFile("package.json");
     var parsed = try std.json.parseFromSlice(std.json.Value, b.allocator, json, .{});
@@ -101,7 +104,12 @@ pub fn build(b: *std.Build) !void {
         lib.stack_size = wasm_stack_size;
         lib.root_module.export_symbol_names = &[_][]const u8{ "ADD", "SUBTRACT", "compute" };
         lib.root_module.addOptions("zigpkg_options", options);
-        const opt = b.findProgram(
+        const opt = if (@hasDecl(std.Build, "FindProgramOptions")) blk: {
+            if (exists(b, "./node_modules/.bin/wasm-opt") catch false) {
+                break :blk "./node_modules/.bin/wasm-opt";
+            }
+            break :blk b.findProgram(.{ .names = &.{"wasm-opt"} });
+        } else b.findProgram(
             &[_][]const u8{"wasm-opt"},
             &[_][]const u8{"./node_modules/.bin"},
         ) catch null;
@@ -167,34 +175,45 @@ pub fn build(b: *std.Build) !void {
         );
         b.getInstallStep().dependOn(&header.step);
 
-        const pc = b.fmt("lib{s}.pc", .{name});
-        const cwd = try std.process.currentPathAlloc(b.graph.io, b.allocator);
-        const file = try std.Io.Dir.path.relative(
-            b.allocator,
-            cwd,
-            &b.graph.environ_map,
-            cwd,
-            try b.cache_root.join(b.allocator, &.{pc}),
-        );
-        const pkgconfig_file = try std.Io.Dir.cwd().createFile(b.graph.io, file, .{});
-        defer pkgconfig_file.close(b.graph.io);
-
-        const dirname = comptime std.Io.Dir.path.dirname(@src().file) orelse ".";
-        var writer = pkgconfig_file.writer(b.graph.io, &.{});
-        try writer.interface.print(
-            \\prefix={0s}/{1s}
+        const content = try std.fmt.allocPrint(b.allocator,
+            \\prefix=${{pcfiledir}}/../..
             \\includedir=${{prefix}}/include
             \\libdir=${{prefix}}/lib
             \\
-            \\Name: lib{2s}
-            \\URL: https://github.com/{3s}
-            \\Description: {4s}
-            \\Version: {5s}
+            \\Name: lib{0s}
+            \\URL: https://github.com/{1s}
+            \\Description: {2s}
+            \\Version: {3s}
             \\Cflags: -I${{includedir}}
-            \\Libs: -L${{libdir}} -l{2s}
-        , .{ dirname, b.install_path, name, repository.next().?, description, version });
+            \\Libs: -L${{libdir}} -l{0s}
+        , .{ name, repository.next().?, description, version });
 
-        b.installFile(file, b.fmt("share/pkgconfig/{s}", .{pc}));
+        const pc = b.fmt("lib{s}.pc", .{name});
+        if (@hasDecl(std.Build, "FindProgramOptions")) {
+            const write_file = b.addWriteFiles();
+            const pkgconfig = write_file.add(pc, content);
+            b.getInstallStep().dependOn(&b.addInstallFileWithDir(
+                pkgconfig,
+                .prefix,
+                b.fmt("share/pkgconfig/{s}", .{pc}),
+            ).step);
+        } else {
+            const cwd = try std.process.currentPathAlloc(b.graph.io, b.allocator);
+            const file = try std.Io.Dir.path.relative(
+                b.allocator,
+                cwd,
+                &b.graph.environ_map,
+                cwd,
+                try b.cache_root.join(b.allocator, &.{pc}),
+            );
+            const pkgconfig_file = try std.Io.Dir.cwd().createFile(b.graph.io, file, .{});
+            defer pkgconfig_file.close(b.graph.io);
+
+            var writer = pkgconfig_file.writer(b.graph.io, &.{});
+            try writer.interface.writeAll(content);
+
+            b.installFile(file, b.fmt("share/pkgconfig/{s}", .{pc}));
+        }
     }
 
     const coverage = b.option([]const u8, "test-coverage", "Generate test coverage");
@@ -245,12 +264,31 @@ fn maybeRanlib(
     artifact: *std.Build.Step.Compile,
     install_step: *std.Build.Step,
 ) void {
-    if (builtin.os.tag != .macos) return;
-    if (artifact.linkage != .static) return;
+    if (comptime @hasDecl(std.Build, "FindProgramOptions")) {
+        return;
+    } else {
+        if (builtin.os.tag != .macos) return;
+        if (artifact.linkage != .static) return;
 
-    const ranlib = b.findProgram(&[_][]const u8{"ranlib"}, &[_][]const u8{}) catch return;
-    const sh = b.addSystemCommand(&[_][]const u8{ranlib});
-    sh.addArg(b.getInstallPath(.{ .lib = {} }, b.fmt("lib{s}.a", .{artifact.name})));
-    sh.step.dependOn(install_step);
-    b.getInstallStep().dependOn(&sh.step);
+        const ranlib = b.findProgram(&[_][]const u8{"ranlib"}, &[_][]const u8{}) catch return;
+        const sh = b.addSystemCommand(&[_][]const u8{ranlib});
+        sh.addArg(b.getInstallPath(.{ .lib = {} }, b.fmt("lib{s}.a", .{artifact.name})));
+        sh.step.dependOn(install_step);
+        b.getInstallStep().dependOn(&sh.step);
+    }
+}
+
+fn exists(b: *std.Build, path: []const u8) !bool {
+    if (comptime @hasDecl(std, "Io")) {
+        std.Io.Dir.cwd().access(b.graph.io, path, .{}) catch |err| switch (err) {
+            error.FileNotFound => return false,
+            else => |e| return e,
+        };
+    } else {
+        std.fs.cwd().access(path, .{}) catch |err| switch (err) {
+            error.FileNotFound => return false,
+            else => |e| return e,
+        };
+    }
+    return true;
 }
