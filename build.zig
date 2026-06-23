@@ -264,18 +264,17 @@ fn maybeRanlib(
     artifact: *std.Build.Step.Compile,
     install_step: *std.Build.Step,
 ) void {
-    if (comptime @hasDecl(std.Build, "FindProgramOptions")) {
-        return;
-    } else {
-        if (builtin.os.tag != .macos) return;
-        if (artifact.linkage != .static) return;
+    if (builtin.os.tag != .macos) return;
+    if (artifact.linkage != .static) return;
 
-        const ranlib = b.findProgram(&[_][]const u8{"ranlib"}, &[_][]const u8{}) catch return;
-        const sh = b.addSystemCommand(&[_][]const u8{ranlib});
-        sh.addArg(b.getInstallPath(.{ .lib = {} }, b.fmt("lib{s}.a", .{artifact.name})));
-        sh.step.dependOn(install_step);
-        b.getInstallStep().dependOn(&sh.step);
-    }
+    const ranlib = if (comptime @hasDecl(std.Build, "FindProgramOptions"))
+        b.findProgram(.{ .names = &.{"ranlib"} }) orelse return
+    else
+        b.findProgram(&[_][]const u8{"ranlib"}, &[_][]const u8{}) catch return;
+
+    const sh = b.addSystemCommand(&[_][]const u8{ranlib});
+    sh.addFileArg(artifact.getEmittedBin());
+    install_step.dependOn(&sh.step);
 }
 
 fn exists(b: *std.Build, path: []const u8) !bool {
