@@ -234,11 +234,15 @@ pub fn build(b: *std.Build) !void {
     });
     tests.root_module.addOptions("zigpkg_options", options);
     maybeStrip(b, tests, &tests.step, strip, cmd);
+    const run_tests = b.addRunArtifact(tests);
     if (coverage) |path| {
-        tests.setExecCmd(&.{ "kcov", "--include-pattern=src/lib", path, null });
+        const kcov_run = b.addSystemCommand(&.{ "kcov", "--include-pattern=src/lib", path });
+        kcov_run.addArtifactArg(tests);
+        kcov_run.enableTestRunnerMode();
+        b.step("test", "Run all tests").dependOn(&kcov_run.step);
+    } else {
+        b.step("test", "Run all tests").dependOn(&run_tests.step);
     }
-
-    b.step("test", "Run all tests").dependOn(&b.addRunArtifact(tests).step);
 }
 
 fn maybeStrip(
