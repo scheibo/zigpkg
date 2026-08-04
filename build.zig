@@ -1,6 +1,15 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
+const Debug: std.builtin.OptimizeMode =
+    if (@hasDecl(std.builtin.OptimizeMode, "Debug")) .debug else .Debug;
+const ReleaseSafe: std.builtin.OptimizeMode =
+    if (@hasDecl(std.builtin.OptimizeMode, "ReleaseSafe")) .safe else .ReleaseSafe;
+const ReleaseFast: std.builtin.OptimizeMode =
+    if (@hasDecl(std.builtin.OptimizeMode, "ReleaseFast")) .fast else .ReleaseFast;
+const ReleaseSmall: std.builtin.OptimizeMode =
+    if (@hasDecl(std.builtin.OptimizeMode, "ReleaseSmall")) .small else .ReleaseSmall;
+
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -91,7 +100,7 @@ pub fn build(b: *std.Build) !void {
             .root_module = b.createModule(.{
                 .root_source_file = b.path("src/lib/wasm.zig"),
                 .optimize = switch (optimize) {
-                    .ReleaseFast, .ReleaseSafe => .ReleaseSmall,
+                    ReleaseFast, ReleaseSafe => ReleaseSmall,
                     else => optimize,
                 },
                 .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
@@ -113,7 +122,7 @@ pub fn build(b: *std.Build) !void {
             &[_][]const u8{"wasm-opt"},
             &[_][]const u8{"./node_modules/.bin"},
         ) catch null;
-        if (optimize != .Debug and opt != null) {
+        if (optimize != Debug and opt != null) {
             const out = b.fmt("build/lib/{s}.wasm", .{name});
             const sh = b.addSystemCommand(&[_][]const u8{ opt.?, "-O4" });
             sh.addArtifactArg(lib);
